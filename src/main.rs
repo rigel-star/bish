@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused)]
+#![allow(non_camel_case_types)]
 
 use std::collections::VecDeque;
 
