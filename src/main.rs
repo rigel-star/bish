@@ -1,15 +1,18 @@
 #![allow(dead_code)]
 #![allow(unused)]
 
+use std::collections::VecDeque;
+
 const STACK_MAX: u32 = 256;
 
 enum OpCode
 {
-    OP_NOP = 0,
-    OP_RETURN = 1,
-    OP_CONST = 2,
-    OP_AND = 3,
-    OP_OR = 4
+    OP_NOP = 100,
+    OP_RETURN = 0,
+    OP_CONST = 1,
+    OP_AND = 2,
+    OP_OR = 3,
+    OP_ADD = 4
 }
 
 impl OpCode
@@ -18,26 +21,34 @@ impl OpCode
     {
         match c
         {
-            0 => OpCode::OP_NOP,
-            1 => OpCode::OP_RETURN,
-            2 => OpCode::OP_CONST,
-            3 => OpCode::OP_AND,
-            4 => OpCode::OP_OR,
+            0 => OpCode::OP_RETURN,
+            1 => OpCode::OP_CONST,
+            2 => OpCode::OP_AND,
+            3 => OpCode::OP_OR,
+            4 => OpCode::OP_ADD,
             _ => OpCode::OP_NOP
         }
     }
 }
 
+#[derive(Clone, Copy)]
 enum PrimType
 {
     Double(f64),
-    Integer(i32)
+    Integer(i64),
+    Unknown
 }
 
 struct Pool
 {
-    data: Vec<PrimType>,
+    data: VecDeque<PoolItem>,
     size: usize
+}
+
+struct PoolItem
+{
+    data: PrimType,
+    index: usize
 }
 
 impl Pool
@@ -45,7 +56,7 @@ impl Pool
     fn new() -> Pool
     {
         Pool {
-            data: Vec::new(),
+            data: VecDeque::new(),
             size: 0
         }
     }
@@ -55,7 +66,7 @@ struct Chunk
 {
     code: Vec<u8>,
     size: usize,
-    const_pool: Pool
+    const_pool: Pool,
 }
 
 impl Chunk
@@ -75,18 +86,38 @@ impl Chunk
         self.size += 1;
     }
 
-    fn write_const_int(&mut self, val: i32)
+    fn write_const_int(&mut self, val: i64)
     {
         self.write(OpCode::OP_CONST);
-        self.const_pool.data.push(PrimType::Integer(val));
+        self.const_pool.data.push_back(PoolItem { 
+            data: PrimType::Integer(val),
+            index: self.const_pool.size
+        });
         self.const_pool.size += 1;
     }
 
     fn write_const_double(&mut self, val: f64)
     {
         self.write(OpCode::OP_CONST);
-        self.const_pool.data.push(PrimType::Double(val));
+        self.const_pool.data.push_back(PoolItem {
+            data: PrimType::Double(val),
+            index: self.const_pool.size
+        });
         self.const_pool.size += 1;
+    }
+
+    fn read_const(&mut self) -> PrimType
+    {
+        if self.const_pool.size == 0 {()}
+
+        self.const_pool.size -= 1;
+        if let Some(value) = &self.const_pool.data.pop_front()
+        {
+            value.data
+        }
+        else {
+            PrimType::Unknown
+        }
     }
 
     fn dump(&self)
@@ -110,7 +141,7 @@ impl Chunk
             OpCode::OP_NOP => { self._dump_simple_instr("OP_NOP", code_off); },
             OpCode::OP_CONST => { *code_off += 1; *pool_off += 1; },
             _ => {
-                println!("{}", instr);
+                println!("{instr}");
                 println!("Invalid Opcode");
                 std::process::exit(1);
             }
@@ -119,23 +150,9 @@ impl Chunk
 
     fn _dump_simple_instr(&self, name: &str, code_off: &mut usize)
     {
-        // right justify by 4 and fill with 0
         println!("{:0>4} {}", format!("{:x}", code_off), name);
         *code_off += 1;
     }
-
-    // fn _dump_const_instr(&self, name: &str, code_off: &mut usize, pool_off: &mut usize)
-    // {
-    //     println!(
-    //         "{:0>4} {} {:0>4} {}", 
-    //         format!("{:x}", code_off),
-    //         name,
-    //         format!("{:x}", pool_off),
-    //         self.const_pool.data[*pool_off]
-    //     );
-    //     *code_off += 1;
-    //     *pool_off += 1;
-    // }
 }
 
 enum InterpResult
@@ -145,127 +162,225 @@ enum InterpResult
     OK = 2
 }
 
-struct VirtMac<'a>
+struct VirtMac
 {
     chunk: Chunk,
     ip: usize,
-    stack: Vec<&'a PrimType>,
-    sp: usize
+    stack: Vec<PrimType>
 }
 
-impl<'a> VirtMac<'a>
+impl VirtMac
 {
-    fn new(chunk: Chunk) -> VirtMac<'a>
+    fn new(chunk: Chunk) -> VirtMac
     {
         VirtMac {
-            chunk: chunk,
+            chunk,
             ip: 0,
-            stack: Vec::new(),
-            sp: 0
+            stack: Vec::new()
         }
     }
 
-    fn reset_stack(&mut self)
+    fn stack_push(&mut self, val: PrimType)
     {
-        self.sp = 0;
+        self.stack.push(val);
     }
 
-    fn stack_push(&mut self, val: &'a PrimType)
+    fn stack_pop(&mut self) -> PrimType
     {
-        self.stack.insert(self.sp, val);
-        self.sp += 1;
-    }
-
-    fn stack_pop(&mut self) -> &PrimType
-    {
-        let val = &self.stack[self.sp - 1];
-        self.sp -= 1;
-        val
+        if let Some(value) = &self.stack.pop()
+        {
+            *value
+        }
+        else 
+        {
+            PrimType::Unknown
+        }
     }
 
     fn _dump_stack(&self)
     {
-        let mut idx: usize = self.sp;
+        let mut idx: usize = self.stack.len();
         for i in (0..idx).rev()
         {
-            println!("[{}]", 0);
+            match self.stack[i]
+            {
+                PrimType::Integer(value) => {
+                    println!("[{value}]");
+                },
+                PrimType::Double(value) => {
+                    println!("[{value}]");
+                },
+                PrimType::Unknown => {
+                    println!("[UNKNOWN]");
+                }
+            }
         }
     }
 
     fn interpret(&mut self) -> InterpResult
     {
-        let mut pool_off: usize = 0;
-
+        let mut counter: usize = 0;
         loop
         {
-            let i = self.chunk.code[self.ip];
-            let instr: OpCode = OpCode::from_u8(i);
-            match instr
-            {
-                OpCode::OP_RETURN => { break; },
-                OpCode::OP_NOP => (),
-                OpCode::OP_CONST => {
-                    let cc = self._read_const(&mut pool_off);
-                    self.stack_push(cc);
-                },
-                OpCode::OP_AND | OpCode::OP_OR => {
-                    let a = self.stack_pop();
-                    let b = self.stack_pop();
-                    let mut ok = true;
-
-                    let mut atype = String::from("");
-                    let mut avalue: i32 = 0;
-
-                    let mut btype = String::from("");
-                    let mut bvalue: i32 = 0;
-
-                    avalue = match a {
-                        PrimType::Double(_) => { 
-                            ok = false;
-                            atype.push_str("float");
-                            0
-                        },
-                        PrimType::Integer(value) => *value
-                    };
-
-                    bvalue = match b {
-                        PrimType::Double(_) => { 
-                            ok = false; 
-                            btype.push_str("float");
-                            0
-                        },
-                        PrimType::Integer(value) => *value
-                    };
-
-                    if ok
-                    {
-                        self.stack_push(&PrimType::Integer(avalue & bvalue));
-                    }
-                    else
-                    {
-                        println!("Can't perform & on type(s): '{}' and '{}'", atype, btype);
-                        std::process::exit(2);
-                    }
-                }
+            { 
+                let code: u8 = self.chunk.code[counter];
+                self._interpret_instr(code); 
             }
-            self.ip += 1;
+            counter += 1;
+            if counter == self.chunk.code.len()
+            {
+                break;
+            }
         }
         InterpResult::OK
     }
 
-    fn _read_const(&self, off: &mut usize) -> &PrimType
+    fn _interpret_instr(&mut self, i: u8)
     {
-        let data = &self.chunk.const_pool.data[*off];
-        *off += 1;
-        data
+        let instr: OpCode = OpCode::from_u8(i);
+        match instr
+        {
+            OpCode::OP_RETURN => { return; },
+            OpCode::OP_NOP => (),
+            OpCode::OP_CONST => {
+                let con = &self.chunk.read_const();
+                match con
+                {
+                    PrimType::Double(value) =>
+                    {
+                        self.stack_push(PrimType::Double(*value));
+                    },
+                    PrimType::Integer(value) => {
+                        self.stack_push(PrimType::Integer(*value));
+                    },
+                    PrimType::Unknown => {
+                        println!("PANIC: Unknown value type in constant pool!");
+                        std::process::exit(1);
+                    }
+                }
+            },
+            OpCode::OP_AND | OpCode::OP_OR | OpCode::OP_ADD => {
+                self._interpret_binary_instr(instr);
+            }
+        }
+    }
+
+    fn _interpret_binary_instr(&mut self, instr: OpCode)
+    {
+        let aa: &PrimType = &self.stack_pop();
+        let bb: &PrimType = &self.stack_pop();
+        let mut ok: bool = true;
+
+        match instr 
+        {
+            OpCode::OP_AND | OpCode::OP_OR => {
+                let avalue = match aa {
+                    PrimType::Double(_) | PrimType::Unknown => {
+                        ok = false;
+                        println!("");
+                        0
+                    },
+                    PrimType::Integer(value) => *value
+                };
+                let bvalue = match bb {
+                    PrimType::Double(_) | PrimType::Unknown => {
+                        ok = false;
+                        println!("");
+                        0
+                    },
+                    PrimType::Integer(value) => *value
+                };
+                self._perform_logical_op(instr, avalue, bvalue);
+            },
+            OpCode::OP_ADD => {
+                let mut avalue_double: bool = false;
+                let mut bvalue_double: bool = false;
+                let mut avalue_f: f64 = 0.0;
+                let mut bvalue_f: f64 = 0.0;
+                
+                let mut avalue_i: i64 = 0;
+                let mut bvalue_i: i64 = 0;
+
+                match aa {
+                    PrimType::Double(value) => {
+                        avalue_double = true;
+                        avalue_f = *value;
+                    },
+                    PrimType::Integer(value) => {
+                        avalue_i = *value;
+                    },
+                    _ => {();}
+                };
+
+                match bb {
+                    PrimType::Double(value) => {
+                        bvalue_double = true;
+                        bvalue_f = *value;
+                    },
+                    PrimType::Integer(value) => {
+                        bvalue_i = *value;
+                    },
+                    _ => {();}
+                };
+
+                if avalue_double && bvalue_double
+                {
+                    self._perform_arithmetic_op_double(instr, avalue_f, bvalue_f);
+                }
+                else if avalue_double && !bvalue_double
+                {
+                    self._perform_arithmetic_op_double(instr, avalue_f, bvalue_i as f64);
+                }
+                else if !avalue_double && bvalue_double
+                {
+                    self._perform_arithmetic_op_double(instr, avalue_i as f64, bvalue_f);
+                }
+                else {
+                    self._perform_arithmetic_op_int(instr, avalue_i, bvalue_i);
+                }
+            },
+            _ => ()
+        }
+    }
+
+    fn _perform_logical_op(&mut self, instr: OpCode, avalue: i64, bvalue: i64)
+    {
+        match instr 
+        {
+            OpCode::OP_AND => self.stack_push(PrimType::Integer(avalue & bvalue)),
+            OpCode::OP_OR => self.stack_push(PrimType::Integer(avalue | bvalue)),
+            _ => ()
+        }
+    }
+
+    fn _perform_arithmetic_op_double(&mut self, instr: OpCode, avalue: f64, bvalue: f64)
+    {
+        match instr
+        {
+            OpCode::OP_ADD => {
+                self.stack_push(PrimType::Double(avalue + bvalue));
+            },
+            _ => ()
+        }
+    }
+    
+    fn _perform_arithmetic_op_int(&mut self, instr: OpCode, avalue: i64, bvalue: i64)
+    {
+        match instr
+        {
+            OpCode::OP_ADD => {
+                self.stack_push(PrimType::Integer(avalue + bvalue));
+            },
+            _ => ()
+        }
     }
 }
 
 fn main() {
     let mut c = Chunk::new();
+    c.write_const_double(2.4);
     c.write_const_int(2);
-    c.write_const_int(2);
-    c.write(OpCode::OP_AND);
+    c.write(OpCode::OP_ADD);
     c.write(OpCode::OP_RETURN);
 
     let mut vm = VirtMac::new(c);
