@@ -10,6 +10,7 @@ pub enum TokenType
     TOKEN_FLOAT_NUM,
     TOKEN_INT_NUM,
     TOKEN_PLUS,
+    TOKEN_MINUS,
     TOKEN_AND,
     TOKEN_OR,
     TOKEN_STRING,
@@ -140,6 +141,10 @@ impl Scanner
         if chr == '+'
         {
             self._non_literal_token(TokenType::TOKEN_PLUS, String::from("+"))
+        }
+        else if chr == '-'
+        {
+            self._non_literal_token(TokenType::TOKEN_MINUS, String::from("-"))
         }
         else if chr == ';'
         {
