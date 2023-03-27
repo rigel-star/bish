@@ -2,170 +2,24 @@
 #![allow(unused)]
 #![allow(non_camel_case_types)]
 
-use std::collections::VecDeque;
+pub mod scanner;
+pub mod compiler;
+pub mod chunk;
+use chunk::{Chunk, PrimType, OpCode};
 
 const STACK_MAX: u32 = 256;
-
-enum OpCode
-{
-    OP_NOP = 100,
-    OP_RETURN = 0,
-    OP_CONST = 1,
-    OP_AND = 2,
-    OP_OR = 3,
-    OP_ADD = 4
-}
-
-impl OpCode
-{
-    fn from_u8(c: u8) -> OpCode
-    {
-        match c
-        {
-            0 => OpCode::OP_RETURN,
-            1 => OpCode::OP_CONST,
-            2 => OpCode::OP_AND,
-            3 => OpCode::OP_OR,
-            4 => OpCode::OP_ADD,
-            _ => OpCode::OP_NOP
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-enum PrimType
-{
-    Double(f64),
-    Integer(i64),
-    Unknown
-}
-
-struct Pool
-{
-    data: VecDeque<PoolItem>,
-    size: usize
-}
-
-struct PoolItem
-{
-    data: PrimType,
-    index: usize
-}
-
-impl Pool
-{
-    fn new() -> Pool
-    {
-        Pool {
-            data: VecDeque::new(),
-            size: 0
-        }
-    }
-}
-
-struct Chunk
-{
-    code: Vec<u8>,
-    size: usize,
-    const_pool: Pool,
-}
-
-impl Chunk
-{
-    fn new() -> Chunk
-    {
-        Chunk {
-            code: Vec::new(),
-            size: 0,
-            const_pool: Pool::new()
-        }
-    }
-
-    fn write(&mut self, byte: OpCode)
-    {
-        self.code.push(byte as u8);
-        self.size += 1;
-    }
-
-    fn write_const_int(&mut self, val: i64)
-    {
-        self.write(OpCode::OP_CONST);
-        self.const_pool.data.push_back(PoolItem { 
-            data: PrimType::Integer(val),
-            index: self.const_pool.size
-        });
-        self.const_pool.size += 1;
-    }
-
-    fn write_const_double(&mut self, val: f64)
-    {
-        self.write(OpCode::OP_CONST);
-        self.const_pool.data.push_back(PoolItem {
-            data: PrimType::Double(val),
-            index: self.const_pool.size
-        });
-        self.const_pool.size += 1;
-    }
-
-    fn read_const(&mut self) -> PrimType
-    {
-        if self.const_pool.size == 0 {()}
-
-        self.const_pool.size -= 1;
-        if let Some(value) = &self.const_pool.data.pop_front()
-        {
-            value.data
-        }
-        else {
-            PrimType::Unknown
-        }
-    }
-
-    fn dump(&self)
-    {
-        let mut pool_off: usize = 0;
-        let mut code_off: usize = 0;
-        let size: usize = self.size;
-        while code_off < size
-        {
-            self._dump_instr(&mut code_off, &mut pool_off);
-        }
-    }
-
-    fn _dump_instr(&self, code_off: &mut usize, pool_off: &mut usize)
-    {
-        let instr: u8 = self.code[*code_off];
-        let opcode = OpCode::from_u8(instr);
-        match opcode
-        {
-            OpCode::OP_RETURN => { self._dump_simple_instr("OP_RETURN", code_off); },
-            OpCode::OP_NOP => { self._dump_simple_instr("OP_NOP", code_off); },
-            OpCode::OP_CONST => { *code_off += 1; *pool_off += 1; },
-            _ => {
-                println!("{instr}");
-                println!("Invalid Opcode");
-                std::process::exit(1);
-            }
-        }
-    }
-
-    fn _dump_simple_instr(&self, name: &str, code_off: &mut usize)
-    {
-        println!("{:0>4} {}", format!("{:x}", code_off), name);
-        *code_off += 1;
-    }
-}
 
 enum InterpResult
 {
     COMPILE_ERROR = 0,
     RUNTIME_ERROR = 1,
-    OK = 2
+    INTERPRET_COMPILE_ERROR = 2,
+    OK = 3
 }
 
 struct VirtMac
 {
-    chunk: Chunk,
+    chunk: chunk::Chunk,
     ip: usize,
     stack: Vec<PrimType>
 }
@@ -218,8 +72,32 @@ impl VirtMac
         }
     }
 
-    fn interpret(&mut self) -> InterpResult
+    fn compile(&mut self, source: &str) -> InterpResult
     {
+        let mut s: scanner::Scanner = scanner::Scanner::new(String::from(source));
+        let mut tokens: Vec<scanner::Token> = s.start_scan();
+        let mut parser: compiler::Parser = compiler::Parser::new(&tokens, &mut self.chunk);
+        InterpResult::OK
+    }
+
+    fn interpret(&mut self, source: &str) -> InterpResult
+    {
+        let compiler_status: InterpResult = self.compile(source);
+        match compiler_status
+        {
+            InterpResult::INTERPRET_COMPILE_ERROR =>
+            {
+                println!("Compile error!");
+                std::process::exit(1);
+            },
+            _ => ()
+        }
+
+        if self.chunk.size < 1
+        {
+            return InterpResult::OK;
+        }
+
         let mut counter: usize = 0;
         loop
         {
@@ -262,7 +140,8 @@ impl VirtMac
             },
             OpCode::OP_AND | OpCode::OP_OR | OpCode::OP_ADD => {
                 self._interpret_binary_instr(instr);
-            }
+            },
+            _ => ()
         }
     }
 
@@ -278,7 +157,6 @@ impl VirtMac
                 let avalue = match aa {
                     PrimType::Double(_) | PrimType::Unknown => {
                         ok = false;
-                        println!("");
                         0
                     },
                     PrimType::Integer(value) => *value
@@ -286,12 +164,18 @@ impl VirtMac
                 let bvalue = match bb {
                     PrimType::Double(_) | PrimType::Unknown => {
                         ok = false;
-                        println!("");
                         0
                     },
                     PrimType::Integer(value) => *value
                 };
-                self._perform_logical_op(instr, avalue, bvalue);
+
+                match ok {
+                    true => { self._perform_logical_op(instr, avalue, bvalue); }
+                    false => { 
+                        println!("{}", "Unsupported tyepes for this operation");
+                        std::process::exit(3);
+                    }
+                }
             },
             OpCode::OP_ADD => {
                 let mut avalue_double: bool = false;
@@ -324,20 +208,12 @@ impl VirtMac
                     _ => {();}
                 };
 
-                if avalue_double && bvalue_double
+                match (avalue_double, bvalue_double)
                 {
-                    self._perform_arithmetic_op_double(instr, avalue_f, bvalue_f);
-                }
-                else if avalue_double && !bvalue_double
-                {
-                    self._perform_arithmetic_op_double(instr, avalue_f, bvalue_i as f64);
-                }
-                else if !avalue_double && bvalue_double
-                {
-                    self._perform_arithmetic_op_double(instr, avalue_i as f64, bvalue_f);
-                }
-                else {
-                    self._perform_arithmetic_op_int(instr, avalue_i, bvalue_i);
+                    (true, true) => self._perform_arithmetic_op_double(instr, avalue_f, bvalue_f),
+                    (true, false) => self._perform_arithmetic_op_double(instr, avalue_f, bvalue_i as f64),
+                    (false, true) => self._perform_arithmetic_op_double(instr, avalue_i as f64, bvalue_f),
+                    (false, false) => self._perform_arithmetic_op_int(instr, avalue_i, bvalue_i)
                 }
             },
             _ => ()
@@ -378,13 +254,9 @@ impl VirtMac
 }
 
 fn main() {
-    let mut c = Chunk::new();
-    c.write_const_double(2.4);
-    c.write_const_int(2);
-    c.write(OpCode::OP_ADD);
-    c.write(OpCode::OP_RETURN);
-
-    let mut vm = VirtMac::new(c);
-    vm.interpret();
+    let mut c: Chunk = Chunk::new();
+    let mut vm: VirtMac = VirtMac::new(c);
+    vm.interpret("\"Hello world\"");
     vm._dump_stack();
+    println!("{}", 3434);
 }

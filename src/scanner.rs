@@ -54,7 +54,7 @@ impl Token
         }
     }
 
-    fn none() -> Token
+    pub fn none() -> Token
     {
         Token {
             token_type: TokenType::TOKEN_NONE,
