@@ -2,10 +2,12 @@
 #![allow(unused)]
 #![allow(non_camel_case_types)]
 
+use std::collections::HashMap;
+
 use crate::scanner;
 use crate::chunk;
 
-#[derive(PartialEq, PartialOrd, Clone, Copy)]
+#[derive(PartialEq, PartialOrd, Clone, Copy, Hash, Eq)]
 enum Precedence 
 {
     PREC_NONE,
@@ -21,28 +23,6 @@ enum Precedence
     PREC_PRIMARY
 }
 
-struct ParseRule
-{
-    prefix: Option<fn()>,
-    infix: Option<fn()>,
-    precedence: Precedence
-}
-
-impl ParseRule
-{
-    pub fn new(prefix: Option<fn()>, infix: Option<fn()>, precedence: Precedence) -> Self
-    {
-        Self 
-        {
-            prefix,
-            infix,
-            precedence
-        }
-    }
-}
-
-const RULES: Vec<ParseRule> = vec![];
-
 pub struct Parser<'compiling: 'pointer, 'pointer>
 {
     tokens: &'compiling Vec<scanner::Token>,
@@ -57,7 +37,7 @@ pub struct Parser<'compiling: 'pointer, 'pointer>
 /* 'static-like' method definitions */
 impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
 {
-    pub fn new(tokens: &'compiling Vec<scanner::Token>, chunk: &'compiling mut chunk::Chunk) -> Parser
+    pub fn new(tokens: &'compiling Vec<scanner::Token>, chunk: &'compiling mut chunk::Chunk) -> Parser<'compiling, 'pointer>
     {
         Parser {
             tokens,
@@ -75,7 +55,6 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
 {
     pub fn compile(&mut self)
     {
-        let rules: Vec<ParseRule> = vec![];
         self.advance();
         self.parse_expression();
     }
@@ -87,36 +66,6 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
 
     fn parse_precedence(&self, prec: Precedence)
     {
-        self.advance();
-        let prefix_rule: &ParseRule = self.get_rule(self.previous.token_type as usize).prefix;
-        match prefix_rule
-        {
-            None => 
-            {
-                println!("Expected expression!");
-                return;
-            },
-            Some(func) => { func(); }
-        }
-
-        while prec <= self.get_rule(self.current.token_type).precedence
-        {
-            self.advance();
-            let infix_rule: &Option<fn()> = &self.get_rule(self.previous.token_type).infix;
-            match infix_rule 
-            {
-                Some(func) => {
-                    func();
-                },
-                _ => ()
-            }
-        }
-    }
-
-    fn get_rule(&self, ttype: usize) -> Option<&ParseRule>
-    {
-        if ttype < 0 || usize >= RULES.len() { None }
-        else { RULES[ttype] }
     }
 
     fn parse_number(&mut self)
@@ -155,6 +104,15 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
             },
             _ => ()
         }
+    }
+
+    fn get_rule(&self, token_type: scanner::TokenType) -> (Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)
+    {
+        let mut rules: HashMap<scanner::TokenType, (Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)> = HashMap::new();
+        rules.insert(scanner::TokenType::TOKEN_LEFT_PAREN, (Some(Parser::parse_grouping as fn(&mut Self)), None, Precedence::PREC_NONE));
+        rules.insert(scanner::TokenType::TOKEN_MINUS, (Some(Parser::parse_unary as fn(&mut Self)), Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_TERM));
+        rules.insert(scanner::TokenType::TOKEN_PLUS, (None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_TERM));
+        rules[&token_type]
     }
 
     fn parse_unary(&mut self)
