@@ -77,6 +77,7 @@ impl VirtMac
         let mut s: scanner::Scanner = scanner::Scanner::new(String::from(source));
         let mut tokens: Vec<scanner::Token> = s.start_scan();
         let mut parser: compiler::Parser = compiler::Parser::new(&tokens, &mut self.chunk);
+        parser.compile();
         InterpResult::OK
     }
 
@@ -256,7 +257,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("\"Hello world\"");
+    vm.interpret("5+1+3+");
     vm._dump_stack();
-    println!("{}", 3434);
 }
