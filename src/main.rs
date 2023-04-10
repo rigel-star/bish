@@ -80,14 +80,10 @@ impl VirtMac
     fn interpret(&mut self, source: &str) -> InterpResult
     {
         let compiler_status: InterpResult = self.compile(source);
-        match compiler_status
+        if let InterpResult::INTERPRET_COMPILE_ERROR = compiler_status
         {
-            InterpResult::INTERPRET_COMPILE_ERROR =>
-            {
-                println!("Compile error!");
-                std::process::exit(1);
-            },
-            _ => ()
+            println!("Compile error!");
+            std::process::exit(1);
         }
 
         if self.chunk.size < 1
@@ -116,7 +112,7 @@ impl VirtMac
         let instr: OpCode = OpCode::from_u8(i);
         match instr
         {
-            OpCode::OP_RETURN => { return; },
+            OpCode::OP_RETURN => { },
             OpCode::OP_NOP => (),
             OpCode::OP_CONST => {
                 let con = &self.chunk.read_const();
@@ -180,7 +176,7 @@ impl VirtMac
                 match ok {
                     true => { self._perform_logical_op(instr, avalue, bvalue); }
                     false => { 
-                        println!("{}", "Unsupported types for this operation");
+                        println!("Unsupported types for this operation");
                         std::process::exit(3);
                     }
                 }
@@ -205,7 +201,7 @@ impl VirtMac
                     PrimType::Integer(value) => {
                         avalue_i = *value;
                     },
-                    _ => {();}
+                    _ => {}
                 };
 
                 match bb {
@@ -216,7 +212,7 @@ impl VirtMac
                     PrimType::Integer(value) => {
                         bvalue_i = *value;
                     },
-                    _ => {();}
+                    _ => {}
                 };
 
                 match (avalue_double, bvalue_double)
