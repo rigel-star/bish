@@ -97,7 +97,7 @@ impl Scanner
             start: 0,
             line: 0,
             source,
-            keywords: HashMap::new()
+            keywords
         }
     }
 }
