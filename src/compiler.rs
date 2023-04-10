@@ -59,6 +59,9 @@ impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
                 (scanner::TokenType::TOKEN_MINUS, &(Some(Parser::parse_unary as fn(&mut Self)), Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_TERM)),
                 (scanner::TokenType::TOKEN_SLASH, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_FACTOR)),
                 (scanner::TokenType::TOKEN_STAR, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_FACTOR)),
+                (scanner::TokenType::TOKEN_SAHI, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_GALAT, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_NIL, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
             ])
         }
     }
@@ -108,6 +111,19 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
                 },
                 None => ()
             }
+        }
+    }
+
+    fn parse_literal(&mut self)
+    {
+        match self.previous.token_type
+        {
+            scanner::TokenType::TOKEN_SAHI |
+            scanner::TokenType::TOKEN_GALAT |
+            scanner::TokenType::TOKEN_NIL => {
+                self.emit_bytecode(self.previous.token_type as u8);
+            },
+            _ => ()
         }
     }
 
