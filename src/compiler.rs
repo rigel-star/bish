@@ -37,7 +37,7 @@ pub struct Parser<'compiling: 'pointer, 'pointer>
     counter: usize,
     had_error: bool,
     panic_mode: bool,
-    rules: HashMap<u8, &'compiling (Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)>
+    rules: HashMap<scanner::TokenType, &'compiling (Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)>
 }
 
 /* 'static-like' method definitions */
@@ -54,16 +54,16 @@ impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
             had_error: false,
             panic_mode: false,
             rules: HashMap::from_iter(vec![
-                (scanner::TokenType::TOKEN_LEFT_PAREN as u8, &(Some(Parser::parse_grouping as fn(&mut Self)), None, Precedence::PREC_NONE)),
-                (scanner::TokenType::TOKEN_RIGHT_PAREN as u8, &(None, None, Precedence::PREC_NONE)),
-                (scanner::TokenType::TOKEN_LEFT_BRACE as u8, &(None, None, Precedence::PREC_NONE)),
-                (scanner::TokenType::TOKEN_RIGHT_BRACE as u8, &(None, None, Precedence::PREC_NONE)),
-                (scanner::TokenType::TOKEN_FLOAT_NUM as u8, &(Some(Parser::parse_number as fn(&mut Self)), None, Precedence::PREC_NONE)),
-                (scanner::TokenType::TOKEN_INT_NUM as u8, &(Some(Parser::parse_number as fn(&mut Self)), None, Precedence::PREC_NONE)),
-                (scanner::TokenType::TOKEN_PLUS as u8, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_TERM)),
-                (scanner::TokenType::TOKEN_MINUS as u8, &(Some(Parser::parse_unary as fn(&mut Self)), Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_TERM)),
-                (scanner::TokenType::TOKEN_SLASH as u8, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_FACTOR)),
-                (scanner::TokenType::TOKEN_STAR as u8, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_FACTOR)),
+                (scanner::TokenType::TOKEN_LEFT_PAREN, &(Some(Parser::parse_grouping as fn(&mut Self)), None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_RIGHT_PAREN, &(None, None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_LEFT_BRACE, &(None, None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_RIGHT_BRACE, &(None, None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_FLOAT_NUM, &(Some(Parser::parse_number as fn(&mut Self)), None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_INT_NUM, &(Some(Parser::parse_number as fn(&mut Self)), None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_PLUS, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_TERM)),
+                (scanner::TokenType::TOKEN_MINUS, &(Some(Parser::parse_unary as fn(&mut Self)), Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_TERM)),
+                (scanner::TokenType::TOKEN_SLASH, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_FACTOR)),
+                (scanner::TokenType::TOKEN_STAR, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_FACTOR)),
             ])
         }
     }
@@ -85,7 +85,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     fn parse_precedence(&mut self, prec: Precedence)
     {
         let _ = self.advance();
-        let prefix: Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)> = self.get_rule(self.previous.token_type as u8);
+        let prefix: Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)> = self.get_rule(self.previous.token_type);
         match prefix
         {
             Some(func_tuple) => {
@@ -98,10 +98,10 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
             None => ()
         }
 
-        while prec < self.get_rule(self.current.token_type as u8).unwrap().2
+        while prec < self.get_rule(self.current.token_type).unwrap().2
         {
             self.advance();
-            let infix: Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)> = self.get_rule(self.previous.token_type as u8);
+            let infix: Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)> = self.get_rule(self.previous.token_type);
             match infix 
             {
                 Some(func_tuple) => {
@@ -136,7 +136,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     fn parse_binary(&mut self)
     {
         let ttype: scanner::TokenType = self.previous.token_type;
-        let prec: Precedence = self.get_rule(ttype as u8).unwrap().2;
+        let prec: Precedence = self.get_rule(ttype).unwrap().2;
         self.parse_precedence(prec);
         match ttype 
         {
@@ -176,9 +176,9 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
         self.consume(scanner::TokenType::TOKEN_RIGHT_PAREN, "Expected ')' after expression.");
     }
 
-    fn get_rule(&mut self, token_type: u8) -> Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)>
+    fn get_rule(&mut self, token_type: scanner::TokenType) -> Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)>
     {
-        println!("DEBUG[get_rule]: TokenType = {}", token_type);
+        println!("DEBUG[get_rule]: TokenType = {:?}", token_type);
         Some(self.rules[&token_type])
     }
 
