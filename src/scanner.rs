@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-#[derive(Copy, Clone, PartialEq, Hash, Eq)]
+#[derive(Copy, Clone, PartialEq, Hash, Eq, Debug)]
 pub enum TokenType
 {
     TOKEN_FLOAT_NUM,
