@@ -158,7 +158,7 @@ impl Scanner
         {
             self._non_literal_token(TokenType::TOKEN_STAR, String::from("*"))
         }
-        else if chr == '*'
+        else if chr == '/'
         {
             Token::new(TokenType::TOKEN_SLASH, String::from("/"), Option::<_>::None, self.line)
         }
