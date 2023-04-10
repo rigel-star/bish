@@ -83,34 +83,30 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
 
     fn parse_precedence(&mut self, prec: Precedence)
     {
-        let _ = self.advance();
-        let prefix: Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)> = self.get_rule(self.previous.token_type);
-        match prefix
+        self.advance();
+        let prefix = self.get_rule(self.previous.token_type);
+        if let Some(func_tuple) = prefix 
         {
-            Some(func_tuple) => {
-                match(func_tuple.0)
-                {
-                    Some(prefix_func) => prefix_func(self),
-                    None => panic!("Expected expression!")
-                }
-            },
-            None => ()
+            if let Some(prefix_func) = func_tuple.0 
+            {
+                prefix_func(self);
+            }
+            else
+            {
+                panic!("Expected expression!")
+            }
         }
 
         while prec < self.get_rule(self.current.token_type).unwrap().2
         {
             self.advance();
-            let infix: Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)> = self.get_rule(self.previous.token_type);
-            match infix 
+            let infix = self.get_rule(self.previous.token_type);
+            if let Some(func_tuple) = infix 
             {
-                Some(func_tuple) => {
-                    match(func_tuple.1)
-                    {
-                        Some(infix_func) => infix_func(self),
-                        None => ()
-                    }
-                },
-                None => ()
+                if let Some(infix_func) = func_tuple.1 
+                {
+                    infix_func(self);
+                }
             }
         }
     }
@@ -166,6 +162,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
         }
     }
 
+    #[allow(clippy::single_match)]
     fn parse_unary(&mut self)
     {
         let token: &scanner::Token = self.previous;
@@ -248,7 +245,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
             }
         }
 
-        print!(": {}\n", message);
+        println!(": {}", message);
         self.had_error = true;
     }
 }
