@@ -143,6 +143,8 @@ pub enum PrimType
 {
     Double(f64),
     Integer(i64),
+    Boolean(bool),
+    Nil,
     Unknown
 }
 
