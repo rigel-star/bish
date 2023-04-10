@@ -17,6 +17,9 @@ pub enum OpCode
     OP_SUBTRACT = 6,
     OP_MULTIPLY = 7,
     OP_DIVIDE = 8,
+    OP_TRUE = 9,
+    OP_FALSE = 10,
+    OP_NIL = 11
 }
 
 impl OpCode
@@ -34,6 +37,9 @@ impl OpCode
             6 => OpCode::OP_SUBTRACT,
             7 => OpCode::OP_MULTIPLY,
             8 => OpCode::OP_DIVIDE,
+            9 => OpCode::OP_TRUE,
+            10 => OpCode::OP_FALSE,
+            11 => OpCode::OP_NIL,
             _ => OpCode::OP_NOP
         }
     }
