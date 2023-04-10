@@ -123,12 +123,7 @@ impl Scanner
 
     fn _non_literal_token(&self, token_type: TokenType, lexeme: String) -> Token
     {
-        Token {
-            token_type,
-            lexeme,
-            literal: Option::<_>::None,
-            line: self.line
-        }
+        self._literal_token(token_type, lexeme, None)
     }
     
     fn _literal_token(&self, token_type: TokenType, lexeme: String, literal: Option<String>) -> Token
@@ -210,12 +205,10 @@ impl Scanner
             let token_type: Option<&TokenType> = self.keywords.get(ident);
             match token_type
             {
-                Option::Some(value) => {
-                    return Token::new(*value, String::from(ident), Option::<_>::None, self.line);
-                },
+                Option::Some(value) => { return self._non_literal_token(*value, String::from(ident)); },
                 Option::None => { return self._non_literal_token(TokenType::TOKEN_IDENTIFIER, String::from(ident)); }
             };
-            return Token::none();
+            Token::none()
         }
         else if chr == '"'
         {
@@ -226,13 +219,9 @@ impl Scanner
         else if chr.is_ascii_digit()
         {
             let (number, is_double): (&str, bool) = self._parse_number();
-            if is_double
-            {
-                Token::new(TokenType::TOKEN_FLOAT_NUM, String::from(number), Option::Some(String::from(number)), 1)
-            }
-            else 
-            {
-                Token::new(TokenType::TOKEN_INT_NUM, String::from(number), Option::Some(String::from(number)), 1)
+            match is_double {
+                true => Token::new(TokenType::TOKEN_FLOAT_NUM, String::from(number), Option::Some(String::from(number)), self.line),
+                false => Token::new(TokenType::TOKEN_INT_NUM, String::from(number), Option::Some(String::from(number)), self.line)
             }
         }
         else if chr == '\n'
@@ -309,15 +298,5 @@ impl Scanner
     fn is_at_end(&self) -> bool
     {
         self.current >= self.source.len()
-    }
-}
-
-fn main()
-{
-    let mut s: Scanner = Scanner::new(String::from("(45 + 45)"));
-    let tokens: Vec<Token> = s.start_scan();
-    for token in tokens 
-    {
-        println!("{}", token.lexeme);
     }
 }
