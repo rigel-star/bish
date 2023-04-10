@@ -173,7 +173,7 @@ impl VirtMac
                 match ok {
                     true => { self._perform_logical_op(instr, avalue, bvalue); }
                     false => { 
-                        println!("{}", "Unsupported tyepes for this operation");
+                        println!("{}", "Unsupported types for this operation");
                         std::process::exit(3);
                     }
                 }
@@ -257,6 +257,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("5+1+3+");
+    vm.interpret("5+1");
     vm._dump_stack();
 }
