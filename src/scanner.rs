@@ -1,5 +1,3 @@
-#[allow(non_camel_case_types)]
-#[allow(dead_code)]
 #[allow(unused)]
 
 use std::collections::HashMap;
@@ -235,12 +233,12 @@ impl Scanner
         }
     }
 
-    fn _parse_identifier<'a>(&'a mut self) -> &'a str
+    fn _parse_identifier(&mut self) -> &str
     {
         &self.source[self.start + 1..self.current]
     }
 
-    fn _parse_string<'a>(&'a mut self) -> &'a str 
+    fn _parse_string(&mut self) -> &str 
     {
         while !self.is_at_end() && (*self.peek() as char) != '"'
         {
@@ -257,7 +255,7 @@ impl Scanner
         &self.source[self.start + 1..current]
     }
 
-    fn _parse_number<'a>(&'a mut self) -> (&'a str, bool)
+    fn _parse_number(&mut self) -> (&str, bool)
     {
         let source: &str = &self.source[self.current..];
         let mut is_double: bool = false;
