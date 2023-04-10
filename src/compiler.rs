@@ -7,11 +7,6 @@ use std::collections::HashMap;
 use crate::scanner;
 use crate::chunk;
 
-pub fn init_compiler(tokens: &mut Vec<scanner::Token>, chunk: &mut chunk::Chunk)
-{
-    let parser: Parser = Parser::new(tokens, chunk);
-}
-
 #[derive(PartialEq, PartialOrd, Clone, Copy, Hash, Eq)]
 enum Precedence 
 {
