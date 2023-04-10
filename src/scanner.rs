@@ -31,6 +31,9 @@ pub enum TokenType
     TOKEN_DEKHAU,
     TOKEN_SEMICOLON,
     TOKEN_IDENTIFIER,
+    TOKEN_SAHI,
+    TOKEN_GALAT,
+    TOKEN_NIL,
     TOKEN_NONE
 }
 
@@ -85,6 +88,9 @@ impl Scanner
         keywords.insert(String::from("rakha"), TokenType::TOKEN_RAKHA);
         keywords.insert(String::from("dekhau"), TokenType::TOKEN_DEKHAU);
         keywords.insert(String::from("ma"), TokenType::TOKEN_MA);
+        keywords.insert(String::from("sahi"), TokenType::TOKEN_SAHI);
+        keywords.insert(String::from("galat"), TokenType::TOKEN_GALAT);
+        keywords.insert(String::from("nil"), TokenType::TOKEN_NIL);
 
         Scanner {
             current: 0,
