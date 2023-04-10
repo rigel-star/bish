@@ -4,6 +4,7 @@
 
 use std::collections::VecDeque;
 
+#[derive(Debug)]
 pub enum OpCode
 {
     OP_NOP = 100,
