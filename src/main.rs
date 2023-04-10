@@ -139,7 +139,12 @@ impl VirtMac
                     }
                 }
             },
-            OpCode::OP_AND | OpCode::OP_OR | OpCode::OP_ADD => {
+            OpCode::OP_AND | 
+            OpCode::OP_OR | 
+            OpCode::OP_ADD | 
+            OpCode::OP_SUBTRACT | 
+            OpCode::OP_MULTIPLY |
+            OpCode::OP_DIVIDE => {
                 self._interpret_binary_instr(instr);
             },
             _ => ()
@@ -178,7 +183,10 @@ impl VirtMac
                     }
                 }
             },
-            OpCode::OP_ADD => {
+            OpCode::OP_ADD |
+            OpCode::OP_SUBTRACT |
+            OpCode::OP_MULTIPLY |
+            OpCode::OP_DIVIDE => {
                 let mut avalue_double: bool = false;
                 let mut bvalue_double: bool = false;
                 let mut avalue_f: f64 = 0.0;
@@ -238,6 +246,15 @@ impl VirtMac
             OpCode::OP_ADD => {
                 self.stack_push(PrimType::Double(avalue + bvalue));
             },
+            OpCode::OP_SUBTRACT => {
+                self.stack_push(PrimType::Double(bvalue - avalue));
+            },
+            OpCode::OP_DIVIDE => {
+                self.stack_push(PrimType::Double(bvalue / avalue));
+            },
+            OpCode::OP_MULTIPLY => {
+                self.stack_push(PrimType::Double(bvalue * avalue));
+            }
             _ => ()
         }
     }
@@ -249,6 +266,15 @@ impl VirtMac
             OpCode::OP_ADD => {
                 self.stack_push(PrimType::Integer(avalue + bvalue));
             },
+            OpCode::OP_SUBTRACT => {
+                self.stack_push(PrimType::Integer(bvalue - avalue));
+            },
+            OpCode::OP_DIVIDE => {
+                self.stack_push(PrimType::Integer((bvalue as f64 / avalue as f64) as i64));
+            },
+            OpCode::OP_MULTIPLY => {
+                self.stack_push(PrimType::Integer(bvalue * avalue));
+            }
             _ => ()
         }
     }
@@ -257,6 +283,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("5+1");
+    vm.interpret("2 / 1.0");
     vm._dump_stack();
 }
