@@ -119,9 +119,9 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     {
         match self.previous.token_type
         {
-            scanner::TokenType::TOKEN_SAHI => self.emit_bytecode(chunk::OpCode::OP_TRUE as u8),
-            scanner::TokenType::TOKEN_GALAT => self.emit_bytecode(chunk::OpCode::OP_FALSE as u8),
-            scanner::TokenType::TOKEN_NIL => self.emit_bytecode(chunk::OpCode::OP_NIL as u8),
+            scanner::TokenType::TOKEN_SAHI => self.chunk.write_bool(true),
+            scanner::TokenType::TOKEN_GALAT => self.chunk.write_bool(false),
+            scanner::TokenType::TOKEN_NIL => self.chunk.write_nil(),
             _ => ()
         }
     }
