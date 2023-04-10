@@ -30,6 +30,10 @@ impl OpCode
             2 => OpCode::OP_AND,
             3 => OpCode::OP_OR,
             4 => OpCode::OP_ADD,
+            5 => OpCode::OP_NEGATE,
+            6 => OpCode::OP_SUBTRACT,
+            7 => OpCode::OP_MULTIPLY,
+            8 => OpCode::OP_DIVIDE,
             _ => OpCode::OP_NOP
         }
     }
