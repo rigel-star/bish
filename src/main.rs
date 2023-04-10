@@ -59,15 +59,11 @@ impl VirtMac
         {
             match self.stack[i]
             {
-                PrimType::Integer(value) => {
-                    println!("[{value}]");
-                },
-                PrimType::Double(value) => {
-                    println!("[{value}]");
-                },
-                PrimType::Unknown => {
-                    println!("[UNKNOWN]");
-                }
+                PrimType::Integer(value) => println!("[{value}]"),
+                PrimType::Double(value) => println!("[{value}]"),
+                PrimType::Boolean(value) => println!("[{value}]"),
+                PrimType::Nil => println!("[nil]"),
+                PrimType::Unknown => println!("[UNKNOWN]")
             }
         }
     }
@@ -133,6 +129,12 @@ impl VirtMac
                     PrimType::Integer(value) => {
                         self.stack_push(PrimType::Integer(*value));
                     },
+                    PrimType::Boolean(cond) => {
+                        self.stack_push(PrimType::Boolean(*cond));
+                    },
+                    PrimType::Nil => {
+                        self.stack_push(PrimType::Nil);
+                    }
                     PrimType::Unknown => {
                         println!("PANIC: Unknown value type in constant pool!");
                         std::process::exit(1);
@@ -161,18 +163,18 @@ impl VirtMac
         {
             OpCode::OP_AND | OpCode::OP_OR => {
                 let avalue = match aa {
-                    PrimType::Double(_) | PrimType::Unknown => {
+                    PrimType::Integer(value) => *value,
+                    _ => {
                         ok = false;
                         0
-                    },
-                    PrimType::Integer(value) => *value
+                    }
                 };
                 let bvalue = match bb {
-                    PrimType::Double(_) | PrimType::Unknown => {
+                    PrimType::Integer(value) => *value,
+                    _ => {
                         ok = false;
                         0
-                    },
-                    PrimType::Integer(value) => *value
+                    }
                 };
 
                 match ok {
@@ -283,6 +285,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("2 / 1.0");
+    vm.interpret("sahi");
     vm._dump_stack();
 }
