@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused)]
 #![allow(non_camel_case_types)]
+#![allow(clippy::new_without_default)]
 
 use std::collections::VecDeque;
 
@@ -69,29 +70,42 @@ impl Chunk
         self.size += 1;
     }
 
-    pub fn write_const_int(&mut self, val: i64)
+    fn _write_in_const_pool(&mut self, prim_type: PrimType)
     {
-        self.write(OpCode::OP_CONST);
-        self.const_pool.data.push_back(PoolItem { 
-            data: PrimType::Integer(val),
+        self.const_pool.data.push_back(PoolItem {
+            data: prim_type,
             index: self.const_pool.size
         });
         self.const_pool.size += 1;
+    }
+
+    pub fn write_const_int(&mut self, val: i64)
+    {
+        self.write(OpCode::OP_CONST);
+        self._write_in_const_pool(PrimType::Integer(val));
     }
 
     pub fn write_const_double(&mut self, val: f64)
     {
         self.write(OpCode::OP_CONST);
-        self.const_pool.data.push_back(PoolItem {
-            data: PrimType::Double(val),
-            index: self.const_pool.size
-        });
-        self.const_pool.size += 1;
+        self._write_in_const_pool(PrimType::Double(val));
+    }
+
+    pub fn write_bool(&mut self, cond: bool)
+    {
+        self.write(if cond { OpCode::OP_TRUE } else { OpCode::OP_FALSE });
+        self._write_in_const_pool(PrimType::Boolean(cond));
+    }
+
+    pub fn write_nil(&mut self)
+    {
+        self.write(OpCode::OP_NIL);
+        self._write_in_const_pool(PrimType::Nil);
     }
 
     pub fn read_const(&mut self) -> PrimType
     {
-        if self.const_pool.size == 0 {()}
+        if self.const_pool.size == 0 {}
 
         self.const_pool.size -= 1;
         if let Some(value) = &self.const_pool.data.pop_front()
@@ -165,7 +179,7 @@ impl Pool
     pub fn new() -> Pool
     {
         Pool {
-            data: VecDeque::new(),
+            data: VecDeque::<PoolItem>::new(),
             size: 0
         }
     }
