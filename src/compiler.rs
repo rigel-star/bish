@@ -62,6 +62,7 @@ impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
                 (scanner::TokenType::TOKEN_SAHI, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_GALAT, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_NIL, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_NONE, &(None, None, Precedence::PREC_NONE)),
             ])
         }
     }
@@ -118,11 +119,9 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     {
         match self.previous.token_type
         {
-            scanner::TokenType::TOKEN_SAHI |
-            scanner::TokenType::TOKEN_GALAT |
-            scanner::TokenType::TOKEN_NIL => {
-                self.emit_bytecode(self.previous.token_type as u8);
-            },
+            scanner::TokenType::TOKEN_SAHI => self.emit_bytecode(chunk::OpCode::OP_TRUE as u8),
+            scanner::TokenType::TOKEN_GALAT => self.emit_bytecode(chunk::OpCode::OP_FALSE as u8),
+            scanner::TokenType::TOKEN_NIL => self.emit_bytecode(chunk::OpCode::OP_NIL as u8),
             _ => ()
         }
     }
