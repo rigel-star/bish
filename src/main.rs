@@ -44,7 +44,7 @@ impl VirtMac
     {
         if let Some(value) = &self.stack.pop()
         {
-            *value
+            value.clone()
         }
         else 
         {
@@ -57,11 +57,12 @@ impl VirtMac
         let mut idx: usize = self.stack.len();
         for i in (0..idx).rev()
         {
-            match self.stack[i]
+            match self.stack[i].clone()
             {
                 PrimType::Integer(value) => println!("[{value}]"),
                 PrimType::Double(value) => println!("[{value}]"),
                 PrimType::Boolean(value) => println!("[{value}]"),
+                PrimType::CString(len, data) => println!("[{data}({len})]"),
                 PrimType::Nil => println!("[nil]"),
                 PrimType::Unknown => println!("[UNKNOWN]")
             }
@@ -128,9 +129,12 @@ impl VirtMac
                     PrimType::Boolean(cond) => {
                         self.stack_push(PrimType::Boolean(*cond));
                     },
+                    PrimType::CString(len, data) => {
+                        self.stack_push(PrimType::CString(*len, data.clone()));
+                    },
                     PrimType::Nil => {
                         self.stack_push(PrimType::Nil);
-                    }
+                    },
                     PrimType::Unknown => {
                         println!("PANIC: Unknown value type in constant pool!");
                         std::process::exit(1);
@@ -281,6 +285,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("sahi");
+    vm.interpret("\"shrijit\"");
     vm._dump_stack();
 }
