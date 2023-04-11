@@ -151,7 +151,21 @@ impl VirtMac
             OpCode::OP_LT => {
                 self._interpret_binary_instr(instr);
             },
+            OpCode::OP_NEGATE => self._perform_negate_op(),
             _ => ()
+        }
+    }
+
+    fn _perform_negate_op(&mut self)
+    {
+        let value: &PrimType = &self.stack_pop();
+        match value 
+        {
+            PrimType::Integer(value) => self.stack_push(PrimType::Integer(-*value)),
+            PrimType::Double(value) => self.stack_push(PrimType::Double(-*value)),
+            _ => {
+                println!("Type error: can't apply negate(-) operator on type '{}'", PrimType::name(value));
+            }
         }
     }
 
@@ -351,6 +365,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("sahi barabar sahi");
+    vm.interpret("-5 + 4");
     vm._dump_stack();
 }
