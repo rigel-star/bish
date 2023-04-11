@@ -59,6 +59,9 @@ impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
                 (scanner::TokenType::TOKEN_MINUS, &(Some(Parser::parse_unary as fn(&mut Self)), Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_TERM)),
                 (scanner::TokenType::TOKEN_SLASH, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_FACTOR)),
                 (scanner::TokenType::TOKEN_STAR, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_FACTOR)),
+                (scanner::TokenType::TOKEN_THULO, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_COMPARISON)),
+                (scanner::TokenType::TOKEN_SANO, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_COMPARISON)),
+                (scanner::TokenType::TOKEN_BARABAR, &(None, Some(Parser::parse_binary as fn(&mut Self)), Precedence::PREC_EQUALITY)),
                 (scanner::TokenType::TOKEN_SAHI, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_GALAT, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_NIL, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
@@ -98,6 +101,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
             }
         }
 
+        // maybe prec has to be reassigned?
         while prec < self.get_rule(self.current.token_type).unwrap().2
         {
             self.advance();
@@ -164,6 +168,9 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
             scanner::TokenType::TOKEN_SLASH => {
                 self.emit_bytecode(chunk::OpCode::OP_DIVIDE as u8);
             },
+            scanner::TokenType::TOKEN_THULO => self.emit_bytecode(chunk::OpCode::OP_GT as u8),
+            scanner::TokenType::TOKEN_SANO => self.emit_bytecode(chunk::OpCode::OP_LT as u8),
+            scanner::TokenType::TOKEN_BARABAR => self.emit_bytecode(chunk::OpCode::OP_EQ_EQ as u8),
             _ => ()
         }
     }
@@ -172,7 +179,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     fn parse_unary(&mut self)
     {
         let token: &scanner::Token = self.previous;
-        self.parse_precedence(Precedence::PREC_UNARY);
+        self.parse_expression();
         match token.token_type
         {
             scanner::TokenType::TOKEN_MINUS => 
