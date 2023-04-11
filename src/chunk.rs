@@ -182,6 +182,22 @@ pub enum PrimType
     Unknown
 }
 
+impl PrimType
+{
+    pub fn name(typ: &PrimType) -> String 
+    {
+        match typ 
+        {
+            PrimType::Double(_) => String::from("float"),
+            PrimType::Integer(_) => String::from("int"),
+            PrimType::Boolean(_) => String::from("bool"),
+            PrimType::CString(_, _) => String::from("string"),
+            PrimType::Nil => String::from("nil"),
+            _ => String::from("unknown")
+        }
+    }
+}
+
 pub struct Pool
 {
     pub data: VecDeque<PoolItem>,
