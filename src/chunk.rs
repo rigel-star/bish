@@ -85,6 +85,12 @@ impl Chunk
         self._write_in_const_pool(PrimType::Integer(val));
     }
 
+    pub fn write_cstring(&mut self, value: String)
+    {
+        self.write(OpCode::OP_CONST);
+        self._write_in_const_pool(PrimType::CString(value.len(), value));
+    }
+
     pub fn write_const_double(&mut self, val: f64)
     {
         self.write(OpCode::OP_CONST);
@@ -110,7 +116,7 @@ impl Chunk
         self.const_pool.size -= 1;
         if let Some(value) = &self.const_pool.data.pop_front()
         {
-            value.data
+            value.data.clone()
         }
         else {
             PrimType::Unknown
@@ -152,12 +158,13 @@ impl Chunk
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum PrimType
 {
     Double(f64),
     Integer(i64),
     Boolean(bool),
+    CString(usize, String),
     Nil,
     Unknown
 }
