@@ -256,6 +256,7 @@ impl VirtMac
         {
             (PrimType::Integer(a), PrimType::Integer(b)) => (a == b),
             (PrimType::Double(a), PrimType::Double(b)) => (a == b),
+            (PrimType::Boolean(cond1), PrimType::Boolean(cond2)) => (cond1 == cond2),
             (PrimType::CString(len1, val1), PrimType::CString(len2, val2)) => (val1 == val2),
             _ => {
                 self.panic_type_error("barabar", &PrimType::name(val1), &PrimType::name(val2));
@@ -350,6 +351,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("5 barabar 5");
+    vm.interpret("sahi barabar sahi");
     vm._dump_stack();
 }
