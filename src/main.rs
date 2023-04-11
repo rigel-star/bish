@@ -126,19 +126,14 @@ impl VirtMac
                     PrimType::Integer(value) => {
                         self.stack_push(PrimType::Integer(*value));
                     },
-                    PrimType::Boolean(cond) => {
-                        self.stack_push(PrimType::Boolean(*cond));
-                    },
                     PrimType::CString(len, data) => {
                         self.stack_push(PrimType::CString(*len, data.clone()));
-                    },
-                    PrimType::Nil => {
-                        self.stack_push(PrimType::Nil);
                     },
                     PrimType::Unknown => {
                         println!("PANIC: Unknown value type in constant pool!");
                         std::process::exit(1);
-                    }
+                    },
+                    _ => ()
                 }
             },
             OpCode::OP_AND | 
@@ -285,6 +280,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("\"shrijit\"");
+    vm.interpret("nil");
     vm._dump_stack();
 }
