@@ -32,6 +32,9 @@ pub enum TokenType
     TOKEN_SAHI,
     TOKEN_GALAT,
     TOKEN_NIL,
+    TOKEN_THULO,
+    TOKEN_SANO,
+    TOKEN_BARABAR,
     TOKEN_NONE
 }
 
@@ -89,6 +92,9 @@ impl Scanner
         keywords.insert(String::from("sahi"), TokenType::TOKEN_SAHI);
         keywords.insert(String::from("galat"), TokenType::TOKEN_GALAT);
         keywords.insert(String::from("nil"), TokenType::TOKEN_NIL);
+        keywords.insert(String::from("thulo"), TokenType::TOKEN_THULO);
+        keywords.insert(String::from("sano"), TokenType::TOKEN_SANO);
+        keywords.insert(String::from("barabar"), TokenType::TOKEN_BARABAR);
 
         Scanner {
             current: 0,
