@@ -20,7 +20,14 @@ pub enum OpCode
     OP_DIVIDE = 8,
     OP_TRUE = 9,
     OP_FALSE = 10,
-    OP_NIL = 11
+    OP_NIL = 11,
+    OP_EQ_EQ = 12,
+    OP_LT = 13,
+    OP_GT = 14,
+    OP_LTE = 15,
+    OP_GTE = 16,
+    OP_EQ = 17,
+    OP_COUNT
 }
 
 impl OpCode
@@ -41,6 +48,12 @@ impl OpCode
             9 => OpCode::OP_TRUE,
             10 => OpCode::OP_FALSE,
             11 => OpCode::OP_NIL,
+            12 => OpCode::OP_EQ_EQ,
+            13 => OpCode::OP_LT,
+            14 => OpCode::OP_GT,
+            15 => OpCode::OP_LTE,
+            16 => OpCode::OP_GTE,
+            17 => OpCode::OP_EQ,
             _ => OpCode::OP_NOP
         }
     }
@@ -158,7 +171,7 @@ impl Chunk
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PrimType
 {
     Double(f64),
