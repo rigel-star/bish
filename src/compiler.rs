@@ -66,6 +66,7 @@ impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
                 (scanner::TokenType::TOKEN_GALAT, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_NIL, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_STRING, &(Some(Parser::parse_string as fn(&mut Self)), None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_CHHAINA, &(Some(Parser::parse_unary as fn(&mut Self)), None, Precedence::PREC_UNARY)),
                 (scanner::TokenType::TOKEN_NONE, &(None, None, Precedence::PREC_NONE)),
             ])
         }
@@ -179,13 +180,11 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     fn parse_unary(&mut self)
     {
         let token: &scanner::Token = self.previous;
-        self.parse_expression();
+        self.parse_precedence(Precedence::PREC_UNARY);
         match token.token_type
         {
-            scanner::TokenType::TOKEN_MINUS => 
-            {
-                self.emit_bytecode(chunk::OpCode::OP_NEGATE as u8);
-            },
+            scanner::TokenType::TOKEN_MINUS => self.emit_bytecode(chunk::OpCode::OP_NEGATE as u8),
+            scanner::TokenType::TOKEN_CHHAINA => self.emit_bytecode(chunk::OpCode::OP_NOT as u8),
             _ => ()
         }
     }

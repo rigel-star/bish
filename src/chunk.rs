@@ -27,6 +27,7 @@ pub enum OpCode
     OP_LTE = 15,
     OP_GTE = 16,
     OP_EQ = 17,
+    OP_NOT = 18,
     OP_COUNT
 }
 
