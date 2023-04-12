@@ -152,20 +152,8 @@ impl VirtMac
                 self._interpret_binary_instr(instr);
             },
             OpCode::OP_NEGATE => self._perform_negate_op(),
+            OpCode::OP_NOT => self._perform_not_op(),
             _ => ()
-        }
-    }
-
-    fn _perform_negate_op(&mut self)
-    {
-        let value: &PrimType = &self.stack_pop();
-        match value 
-        {
-            PrimType::Integer(value) => self.stack_push(PrimType::Integer(-*value)),
-            PrimType::Double(value) => self.stack_push(PrimType::Double(-*value)),
-            _ => {
-                println!("Type error: can't apply negate(-) operator on type '{}'", PrimType::name(value));
-            }
         }
     }
 
@@ -249,6 +237,35 @@ impl VirtMac
                 self._perform_relational_op(aa, bb, instr);
             },
             _ => ()
+        }
+    }
+
+    fn _perform_not_op(&mut self)
+    {
+        let value: &PrimType = &self.stack_pop();
+        println!("okay {:?}", value);
+        match value 
+        {
+            PrimType::Integer(value) => self.stack_push(PrimType::Boolean(*value == 0)),
+            PrimType::Boolean(cond) => self.stack_push(PrimType::Boolean(!cond)),
+            _ => {
+                println!("Type error: can't apply 'chhaina' operator on type '{}'", PrimType::name(value));
+                std::process::exit(9);
+            }
+        }
+    }
+
+    fn _perform_negate_op(&mut self)
+    {
+        let value: &PrimType = &self.stack_pop();
+        match value 
+        {
+            PrimType::Integer(value) => self.stack_push(PrimType::Integer(-*value)),
+            PrimType::Double(value) => self.stack_push(PrimType::Double(-*value)),
+            _ => {
+                println!("Type error: can't apply negate(-) operator on type '{}'", PrimType::name(value));
+                std::process::exit(8);
+            }
         }
     }
 
@@ -365,6 +382,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("-5 + 4");
+    vm.interpret("yadi (5 * 2) barabar 10 { dekhau \"sahi\"; }");
     vm._dump_stack();
 }
