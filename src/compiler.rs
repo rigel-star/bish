@@ -6,8 +6,9 @@ use std::collections::HashMap;
 
 use crate::scanner;
 use crate::chunk;
+use crate::scanner::TokenType;
 
-#[derive(PartialEq, PartialOrd, Clone, Copy, Hash, Eq)]
+#[derive(PartialEq, PartialOrd, Clone, Copy, Hash, Eq, Debug)]
 enum Precedence 
 {
     PREC_NONE,
@@ -67,6 +68,8 @@ impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
                 (scanner::TokenType::TOKEN_NIL, &(Some(Parser::parse_literal as fn(&mut Self)), None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_STRING, &(Some(Parser::parse_string as fn(&mut Self)), None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_CHHAINA, &(Some(Parser::parse_unary as fn(&mut Self)), None, Precedence::PREC_UNARY)),
+                (scanner::TokenType::TOKEN_DEKHAU, &(None, None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_SEMICOLON, &(None, None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_NONE, &(None, None, Precedence::PREC_NONE)),
             ])
         }
@@ -75,10 +78,41 @@ impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
 
 impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
 {
+    fn debugg(&self, fn_name: &str)
+    {
+        println!("DEBUG[{}]: current token = {:?}", fn_name, self.current.token_type);
+        println!("DEBUG[{}]: previous token = {:?}", fn_name, self.previous.token_type);
+    }
+
+    // maybe inline this function: #[inline]
     pub fn compile(&mut self)
     {
         self.advance();
+        while !self._match(&scanner::TokenType::TOKEN_NONE)
+        {
+            self._parse_decl_stmt();
+        }
+    }
+
+    #[inline]
+    fn _parse_decl_stmt(&mut self)
+    {
+        self._parse_stmt();
+    }
+
+    #[inline]
+    fn _parse_stmt(&mut self)
+    {
+        if self._match(&scanner::TokenType::TOKEN_DEKHAU){
+            self._parse_print_stmt();  
+        }
+    }
+
+    fn _parse_print_stmt(&mut self)
+    {
         self.parse_expression();
+        self.consume(TokenType::TOKEN_SEMICOLON, "Expected ';' to end the print statement.");
+        self.emit_bytecode(chunk::OpCode::OP_PRINT as u8);
     }
 
     fn parse_expression(&mut self)
@@ -176,7 +210,6 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
         }
     }
 
-    #[allow(clippy::single_match)]
     fn parse_unary(&mut self)
     {
         let token: &scanner::Token = self.previous;
@@ -199,6 +232,16 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     {
         println!("DEBUG[get_rule]: TokenType = {:?}", token_type);
         Some(self.rules[&token_type])
+    }
+
+    fn _match(&mut self, token_type: &TokenType) -> bool 
+    {
+        if !(*token_type == self.current.token_type) { false }
+        else 
+        {
+            self.advance();
+            true
+        }
     }
 
     fn consume(&mut self, token_type: scanner::TokenType, msg: &str)
@@ -228,12 +271,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
 
     fn is_at_end(&self) -> bool
     {
-        self.current_token().token_type == scanner::TokenType::TOKEN_NONE
-    }
-
-    fn current_token(&self) -> &scanner::Token
-    {
-        &self.tokens[self.counter]
+        self.current.token_type == scanner::TokenType::TOKEN_NONE
     }
 
     fn error_at_current(&mut self, message: &str)
