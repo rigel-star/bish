@@ -84,7 +84,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
         println!("DEBUG[{}]: previous token = {:?}", fn_name, self.previous.token_type);
     }
 
-    // maybe inline this function: #[inline]
+    #[inline]
     pub fn compile(&mut self)
     {
         self.advance();
@@ -98,6 +98,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     fn _parse_decl_stmt(&mut self)
     {
         self._parse_stmt();
+        if self.panic_mode { self._sync_err(); }
     }
 
     #[inline]
@@ -126,6 +127,22 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
         self.emit_bytecode(chunk::OpCode::OP_PRINT as u8);
     }
 
+    fn _sync_err(&mut self)
+    {
+        self.panic_mode = false;
+        while self.current.token_type != scanner::TokenType::TOKEN_NONE
+        {
+            if self.previous.token_type == scanner::TokenType::TOKEN_SEMICOLON { return; }
+            match self.current.token_type
+            {
+                scanner::TokenType::TOKEN_DEKHAU | scanner::TokenType::TOKEN_GHUMAU => return,
+                _ => ()
+            }
+            self.advance();
+        }
+    }
+
+    #[inline]
     fn parse_expression(&mut self)
     {
         self.parse_precedence(Precedence::PREC_ASSIGNMENT);
@@ -307,6 +324,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
         }
 
         println!(": {}", message);
+        self.panic_mode = true;
         self.had_error = true;
     }
 }
