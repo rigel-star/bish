@@ -37,7 +37,7 @@ impl VirtMac
 
     fn stack_push(&mut self, val: PrimType)
     {
-        println!("DEBUG[stack_push]: PrimType = {:?}", &val);
+        // println!("DEBUG[stack_push]: PrimType = {:?}", &val);
         self.stack.push(val);
     }
 
@@ -166,7 +166,7 @@ impl VirtMac
             PrimType::CString(len, value) => println!("DEKHAU: {}", value),
             PrimType::Double(value) => println!("DEKHAU: {}", value),
             PrimType::Integer(value) => println!("DEKHAU: {}", value),
-            PrimType::Boolean(value) => println!("DEKHAU: {}", value),
+            PrimType::Boolean(value) => println!("DEKHAU: {}", if *value { "sahi" } else { "galat" }),
             _ => {
                 println!("Can't print");
                 std::process::exit(10);
@@ -391,14 +391,26 @@ impl VirtMac
 
     fn panic_type_error(&self, op: &str, type1: &str, type2: &str)
     {
-        println!("Type error: '{}' operator not supported for the types: '{}' and '{}'", op, type1, type2);
+        println!("Type error: '{}' ra '{}' prakar ko value harulai '{}' operator lagauna mildaina.", type1, type2, op);
         std::process::exit(7);
     }
 }
 
+use std::{env, fs};
+
 fn main() {
+    let _args: Vec<String> = env::args().collect();
+    if _args.len() < 2
+    {
+        println!("Usage: cargo run <file_path>");
+        std::process::exit(12);
+    }
+
+    let file_path = &_args.get(1usize);
+    let source_code: String = fs::read_to_string(file_path.unwrap()).expect("Not able to read the source file");
+
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("dekhau \"hello\";");
+    vm.interpret(&source_code);
     vm._dump_stack();
 }
