@@ -153,10 +153,27 @@ impl VirtMac
             },
             OpCode::OP_NEGATE => self._perform_negate_op(),
             OpCode::OP_NOT => self._perform_not_op(),
+            OpCode::OP_PRINT => self._interpret_print_stmt(),
             _ => ()
         }
     }
 
+    fn _interpret_print_stmt(&mut self)
+    {
+        let value: &PrimType = &self.stack_pop();
+        match value 
+        {
+            PrimType::CString(len, value) => println!("DEKHAU: {}", value),
+            PrimType::Double(value) => println!("DEKHAU: {}", value),
+            PrimType::Integer(value) => println!("DEKHAU: {}", value),
+            PrimType::Boolean(value) => println!("DEKHAU: {}", value),
+            _ => {
+                println!("Can't print");
+                std::process::exit(10);
+            }
+        }
+    }
+    
     fn _interpret_binary_instr(&mut self, instr: OpCode)
     {
         let aa: &PrimType = &self.stack_pop();
@@ -382,6 +399,6 @@ impl VirtMac
 fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("yadi (5 * 2) barabar 10 { dekhau \"sahi\"; }");
+    vm.interpret("dekhau \"hello\";");
     vm._dump_stack();
 }
