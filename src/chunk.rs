@@ -28,6 +28,7 @@ pub enum OpCode
     OP_GTE = 16,
     OP_EQ = 17,
     OP_NOT = 18,
+    OP_PRINT = 19,
     OP_COUNT
 }
 
@@ -55,6 +56,8 @@ impl OpCode
             15 => OpCode::OP_LTE,
             16 => OpCode::OP_GTE,
             17 => OpCode::OP_EQ,
+            18 => OpCode::OP_NOT,
+            19 => OpCode::OP_PRINT,
             _ => OpCode::OP_NOP
         }
     }
