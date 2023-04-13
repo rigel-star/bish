@@ -1,0 +1,5 @@
+dekhau ((5 * 2) + 5);
+dekhau "hello world" barabar "hello world";
+dekhau 5 thulo 10;
+dekhau sahi barabar galat;
+dekhau 10 sano 20;
