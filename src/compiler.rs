@@ -106,12 +106,23 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
         if self._match(&scanner::TokenType::TOKEN_DEKHAU){
             self._parse_print_stmt();  
         }
+        else
+        {
+            self._parse_expr_stmt();
+        }
+    }
+
+    #[inline]
+    fn _parse_expr_stmt(&mut self)
+    {
+        self.parse_expression();
+        self.consume(scanner::TokenType::TOKEN_SEMICOLON, format!("Tapaile sayed '{}' pachhi ';' lekhna chhutaunu bhayo hola.", self.previous.lexeme).as_str());
     }
 
     fn _parse_print_stmt(&mut self)
     {
         self.parse_expression();
-        self.consume(TokenType::TOKEN_SEMICOLON, "Expected ';' to end the print statement.");
+        self.consume(TokenType::TOKEN_SEMICOLON, "Tapaile sayed dekahu statement sakiye pachhi ';' lekhna chhutaunu bhayo hola.");
         self.emit_bytecode(chunk::OpCode::OP_PRINT as u8);
     }
 
@@ -225,12 +236,12 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     fn parse_grouping(&mut self)
     {
         self.parse_expression();
-        self.consume(scanner::TokenType::TOKEN_RIGHT_PAREN, "Expected ')' after expression.");
+        self.consume(scanner::TokenType::TOKEN_RIGHT_PAREN, "Tapaile sayed '(' lekhi sake pachhi ')' lekhna chhutaunu bhayo hola.");
     }
 
     fn get_rule(&mut self, token_type: scanner::TokenType) -> Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)>
     {
-        println!("DEBUG[get_rule]: TokenType = {:?}", token_type);
+        // println!("DEBUG[get_rule]: TokenType = {:?}", token_type);
         Some(self.rules[&token_type])
     }
 
@@ -281,8 +292,8 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
 
     fn error_at(&mut self, token_idx: usize, message: &str)
     {
-        let token: &scanner::Token = &self.tokens[token_idx];
-        print!("[{}] Error", token.line);
+        let token: &scanner::Token = &self.tokens[token_idx - 1];
+        print!("[Line: {}] Error", token.line);
         match token.token_type
         {
             scanner::TokenType::TOKEN_NONE =>
@@ -291,7 +302,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
             },
             _ => 
             {
-                print!(" at {}", token.lexeme);
+                print!(" at '{}'", token.lexeme);
             }
         }
 
