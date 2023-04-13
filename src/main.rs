@@ -154,6 +154,7 @@ impl VirtMac
             OpCode::OP_NEGATE => self._perform_negate_op(),
             OpCode::OP_NOT => self._perform_not_op(),
             OpCode::OP_PRINT => self._interpret_print_stmt(),
+            OpCode::OP_POP => { self.stack_pop(); },
             _ => ()
         }
     }
@@ -260,7 +261,6 @@ impl VirtMac
     fn _perform_not_op(&mut self)
     {
         let value: &PrimType = &self.stack_pop();
-        println!("okay {:?}", value);
         match value 
         {
             PrimType::Integer(value) => self.stack_push(PrimType::Boolean(*value == 0)),

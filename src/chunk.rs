@@ -29,6 +29,7 @@ pub enum OpCode
     OP_EQ = 17,
     OP_NOT = 18,
     OP_PRINT = 19,
+    OP_POP = 20,
     OP_COUNT
 }
 
@@ -58,6 +59,7 @@ impl OpCode
             17 => OpCode::OP_EQ,
             18 => OpCode::OP_NOT,
             19 => OpCode::OP_PRINT,
+            20 => OpCode::OP_POP,
             _ => OpCode::OP_NOP
         }
     }
