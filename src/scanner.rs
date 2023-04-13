@@ -65,7 +65,7 @@ impl Token
             token_type: TokenType::TOKEN_NONE,
             lexeme: String::from(""),
             literal: Option::Some(String::from("")),
-            line: 0
+            line: 1
         }
     }
 }
