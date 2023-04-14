@@ -102,7 +102,7 @@ impl Scanner
         Scanner {
             current: 0,
             start: 0,
-            line: 0,
+            line: 1,
             source,
             keywords
         }
@@ -172,35 +172,35 @@ impl Scanner
         }
         else if chr == '&'
         {
-            Token::new(TokenType::TOKEN_AND, String::from("&"), Option::<_>::None, 0)
+            Token::new(TokenType::TOKEN_AND, String::from("&"), Option::<_>::None, self.line)
         }
         else if chr == '|'
         {
-            Token::new(TokenType::TOKEN_OR, String::from("|"), Option::<_>::None, 0)
+            Token::new(TokenType::TOKEN_OR, String::from("|"), Option::<_>::None, self.line)
         }
         else if chr == '{'
         {
-            Token::new(TokenType::TOKEN_LEFT_BRACE, String::from("{"), Option::<_>::None, 0)
+            Token::new(TokenType::TOKEN_LEFT_BRACE, String::from("{"), Option::<_>::None, self.line)
         }
         else if chr == '}'
         {
-            Token::new(TokenType::TOKEN_RIGHT_BRACE, String::from("}"), Option::<_>::None, 0)
+            Token::new(TokenType::TOKEN_RIGHT_BRACE, String::from("}"), Option::<_>::None, self.line)
         }
         else if chr == '['
         {
-            Token::new(TokenType::TOKEN_LEFT_BRACEKT, String::from("["), Option::<_>::None, 0)
+            Token::new(TokenType::TOKEN_LEFT_BRACEKT, String::from("["), Option::<_>::None, self.line)
         }
         else if chr == ']'
         {
-            Token::new(TokenType::TOKEN_RIGHT_BRACKET, String::from("]"), Option::<_>::None, 0)
+            Token::new(TokenType::TOKEN_RIGHT_BRACKET, String::from("]"), Option::<_>::None, self.line)
         }
         else if chr == '('
         {
-            Token::new(TokenType::TOKEN_LEFT_PAREN, String::from("("), Option::<_>::None, 0)
+            Token::new(TokenType::TOKEN_LEFT_PAREN, String::from("("), Option::<_>::None, self.line)
         }
         else if chr == ')'
         {
-            Token::new(TokenType::TOKEN_RIGHT_PAREN, String::from(")"), Option::<_>::None, 0)
+            Token::new(TokenType::TOKEN_RIGHT_PAREN, String::from(")"), Option::<_>::None, self.line)
         }
         else if chr == '_' || chr.is_alphabetic()
         {
