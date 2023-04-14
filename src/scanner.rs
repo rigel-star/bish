@@ -39,6 +39,7 @@ pub enum TokenType
     TOKEN_NONE
 }
 
+#[derive(Debug)]
 pub struct Token
 {
     pub token_type: TokenType,
