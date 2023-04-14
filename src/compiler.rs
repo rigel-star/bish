@@ -70,6 +70,9 @@ impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
                 (scanner::TokenType::TOKEN_CHHAINA, &(Some(Parser::parse_unary as fn(&mut Self)), None, Precedence::PREC_UNARY)),
                 (scanner::TokenType::TOKEN_DEKHAU, &(None, None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_SEMICOLON, &(None, None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_RAKHA, &(None, None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_MA, &(None, None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_IDENTIFIER, &(None, None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_NONE, &(None, None, Precedence::PREC_NONE)),
             ])
         }
@@ -87,7 +90,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     #[inline]
     pub fn compile(&mut self)
     {
-        self.advance();
+        // self.advance();
         while !self._match(&scanner::TokenType::TOKEN_NONE)
         {
             self._parse_decl_stmt();
@@ -97,14 +100,35 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     #[inline]
     fn _parse_decl_stmt(&mut self)
     {
-        self._parse_stmt();
+        self.advance();
+        if self.previous.token_type == TokenType::TOKEN_RAKHA
+        {
+            self._parse_var_decl_stmt();
+        }
+        else 
+        { 
+            self._parse_stmt(); 
+        }
         if self.panic_mode { self._sync_err(); }
+    }
+
+    fn _parse_var_decl_stmt(&mut self)
+    {
+        self.consume(TokenType::TOKEN_IDENTIFIER, "Aakhir kun chai variable ma rakhne ta? Naam pani dinus na variable ko.");
+        let var_name = &self.previous.lexeme;
+        if self._match(&TokenType::TOKEN_MA)
+        {
+            println!("Decalaring variable: {}", var_name);
+            self.parse_expression();
+        }
+        self.consume(TokenType::TOKEN_SEMICOLON, &format!("Tapaile sayed '{}' bhanne variable banaisake pachhi ';' lekhna chhutaunu bhayo hola.", var_name));
     }
 
     #[inline]
     fn _parse_stmt(&mut self)
     {
-        if self._match(&scanner::TokenType::TOKEN_DEKHAU){
+        if self.previous.token_type == scanner::TokenType::TOKEN_DEKHAU
+        {
             self._parse_print_stmt();  
         }
         else
@@ -253,7 +277,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     fn parse_grouping(&mut self)
     {
         self.parse_expression();
-        self.consume(scanner::TokenType::TOKEN_RIGHT_PAREN, "Tapaile sayed '(' lekhi sake pachhi ')' lekhna chhutaunu bhayo hola.");
+        self.consume(scanner::TokenType::TOKEN_RIGHT_PAREN, "Tapaile sayed '(' lekhi sake pachhi, teslai antya garna ')' lekhna chhutaunu bhayo hola.");
     }
 
     fn get_rule(&mut self, token_type: scanner::TokenType) -> Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)>
@@ -262,14 +286,18 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
         Some(self.rules[&token_type])
     }
 
+    /*
+    * This function advances the current pointer by one if given 
+    * token type matches the current current token type.
+    */
     fn _match(&mut self, token_type: &TokenType) -> bool 
     {
-        if !(*token_type == self.current.token_type) { false }
-        else 
-        {
+        if *token_type == self.current.token_type 
+        { 
             self.advance();
-            true
+            true 
         }
+        else { false }
     }
 
     fn consume(&mut self, token_type: scanner::TokenType, msg: &str)
@@ -290,16 +318,11 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     fn advance(&mut self)
     {
         self.previous = self.current;
-        if !self.is_at_end()
+        self.counter += 1;
+        if self.counter < self.tokens.len()
         {
             self.current = &self.tokens[self.counter];
-            self.counter += 1;
         }
-    }
-
-    fn is_at_end(&self) -> bool
-    {
-        self.current.token_type == scanner::TokenType::TOKEN_NONE
     }
 
     fn error_at_current(&mut self, message: &str)
