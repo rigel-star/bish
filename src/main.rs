@@ -183,8 +183,16 @@ impl VirtMac
         #[allow(clippy::single_match)]
         match var_name {
             PrimType::CString(_, value) => {
-                let value = self.globals.get(&value);
-                self.stack_push(value.unwrap().clone());
+                let _value = self.globals.get(&value);
+                if let Some(_val) = _value 
+                { 
+                    self.stack_push(_val.clone()); 
+                }
+                else
+                {
+                    println!("Runtime error: '{}' bhanne variable pahile banaiyeko chhaina. Kripaya variable use garnu bhanda agadi teslai banaunu hola.", value);
+                    std::process::exit(18);
+                }
             },
             _ => ()
         }
