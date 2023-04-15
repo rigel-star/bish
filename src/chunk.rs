@@ -89,43 +89,43 @@ impl Chunk
         self.size += 1;
     }
 
-    fn _write_in_const_pool(&mut self, prim_type: PrimType)
+    pub fn write_const_int(&mut self, val: i64)
+    {
+        self.write(OpCode::OP_CONST);
+        self.write_const(PrimType::Integer(val));
+    }
+
+    pub fn write_cstring(&mut self, value: String)
+    {
+        self.write(OpCode::OP_CONST);
+        self.write_const(PrimType::CString(value.len(), value));
+    }
+
+    pub fn write_const_double(&mut self, val: f64)
+    {
+        self.write(OpCode::OP_CONST);
+        self.write_const(PrimType::Double(val));
+    }
+
+    pub fn write_bool(&mut self, cond: bool)
+    {
+        self.write(if cond { OpCode::OP_TRUE } else { OpCode::OP_FALSE });
+        self.write_const(PrimType::Boolean(cond));
+    }
+
+    pub fn write_nil(&mut self)
+    {
+        self.write(OpCode::OP_NIL);
+        self.write_const(PrimType::Nil);
+    }
+
+    pub fn write_const(&mut self, prim_type: PrimType)
     {
         self.const_pool.data.push_back(PoolItem {
             data: prim_type,
             index: self.const_pool.size
         });
         self.const_pool.size += 1;
-    }
-
-    pub fn write_const_int(&mut self, val: i64)
-    {
-        self.write(OpCode::OP_CONST);
-        self._write_in_const_pool(PrimType::Integer(val));
-    }
-
-    pub fn write_cstring(&mut self, value: String)
-    {
-        self.write(OpCode::OP_CONST);
-        self._write_in_const_pool(PrimType::CString(value.len(), value));
-    }
-
-    pub fn write_const_double(&mut self, val: f64)
-    {
-        self.write(OpCode::OP_CONST);
-        self._write_in_const_pool(PrimType::Double(val));
-    }
-
-    pub fn write_bool(&mut self, cond: bool)
-    {
-        self.write(if cond { OpCode::OP_TRUE } else { OpCode::OP_FALSE });
-        self._write_in_const_pool(PrimType::Boolean(cond));
-    }
-
-    pub fn write_nil(&mut self)
-    {
-        self.write(OpCode::OP_NIL);
-        self._write_in_const_pool(PrimType::Nil);
     }
 
     pub fn read_const(&mut self) -> PrimType
