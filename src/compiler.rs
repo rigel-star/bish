@@ -5,6 +5,7 @@
 use std::collections::HashMap;
 use std::fs;
 
+use crate::chunk::OpCode;
 use crate::scanner;
 use crate::chunk;
 use crate::scanner::TokenType;
@@ -73,7 +74,7 @@ impl<'compiling> Parser<'compiling>
                 (scanner::TokenType::TOKEN_SEMICOLON, &(None, None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_RAKHA, &(None, None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_MA, &(None, None, Precedence::PREC_NONE)),
-                (scanner::TokenType::TOKEN_IDENTIFIER, &(None, None, Precedence::PREC_NONE)),
+                (scanner::TokenType::TOKEN_IDENTIFIER, &(Some(Parser::parse_variable as fn(&mut Self)), None, Precedence::PREC_NONE)),
                 (scanner::TokenType::TOKEN_NONE, &(None, None, Precedence::PREC_NONE)),
             ])
         }
@@ -117,7 +118,6 @@ impl<'compiling> Parser<'compiling>
     {
         self.consume(TokenType::TOKEN_IDENTIFIER, "Aakhir kun chai variable ma rakhne ta? Naam pani dinus na variable ko.");
         let var_name: &String = &self.previous.lexeme;
-        self.chunk.write_const(chunk::PrimType::CString(var_name.len(), var_name.clone()));
         if self._match(&TokenType::TOKEN_MA)
         {
             self.parse_expression();
@@ -126,6 +126,7 @@ impl<'compiling> Parser<'compiling>
         {
             self.emit_bytecode(chunk::OpCode::OP_NIL as u8);
         }
+        self.chunk.write_const(chunk::PrimType::CString(var_name.len(), var_name.clone()));
         self.consume(TokenType::TOKEN_SEMICOLON, &format!("Tapaile sayed '{}' bhanne variable banaisake pachhi ';' lekhna chhutaunu bhayo hola.", var_name));
         self.emit_bytecode(chunk::OpCode::OP_DEF_GLOBAL as u8);
     }
@@ -221,9 +222,16 @@ impl<'compiling> Parser<'compiling>
         }
     }
 
+    #[inline]
     fn parse_string(&mut self)
     {
         self.chunk.write_cstring(self.previous.literal.clone().unwrap());
+    }
+
+    fn parse_variable(&mut self)
+    {
+        self.chunk.write_const(chunk::PrimType::CString(self.previous.lexeme.len(), self.previous.lexeme.clone()));
+        self.emit_bytecode(OpCode::OP_LOAD_GLOBAL as u8); 
     }
 
     fn parse_number(&mut self)

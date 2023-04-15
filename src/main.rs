@@ -159,11 +159,21 @@ impl VirtMac
             OpCode::OP_POP => { self.stack_pop(); },
             OpCode::OP_DEF_GLOBAL => {
                 let name: PrimType = self.chunk.read_const();
-                println!("global var name: {:?}", name);
                 let value: PrimType = self.stack_pop();
                 self._define_global_var(name, value);
                 self.stack_pop();
-            }
+            },
+            OpCode::OP_LOAD_GLOBAL => {
+                let name: PrimType = self.chunk.read_const();
+                #[allow(clippy::single_match)]
+                match name {
+                    PrimType::CString(_, value) => {
+                        let value = self.globals.get(&value);
+                        self.stack_push(value.unwrap().clone());
+                    },
+                    _ => ()
+                }
+            },
             _ => ()
         }
     }
@@ -185,10 +195,11 @@ impl VirtMac
         let value: &PrimType = &self.stack_pop();
         match value 
         {
-            PrimType::CString(len, value) => println!("DEKHAU: {}", value),
-            PrimType::Double(value) => println!("DEKHAU: {}", value),
-            PrimType::Integer(value) => println!("DEKHAU: {}", value),
-            PrimType::Boolean(value) => println!("DEKHAU: {}", if *value { "sahi" } else { "galat" }),
+            PrimType::CString(len, value) => println!("{}", value),
+            PrimType::Double(value) => println!("{}", value),
+            PrimType::Integer(value) => println!("{}", value),
+            PrimType::Boolean(value) => println!("{}", if *value { "sahi" } else { "galat" }),
+            PrimType::Nil => println!("nil"),
             _ => {
                 println!("Can't print");
                 std::process::exit(10);
@@ -437,6 +448,6 @@ fn main() {
     // };
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("rakha a; rakha b; dekhau 5 thulo 4; dekhau sahi;");
+    vm.interpret("rakha a ma 2; rakha b ma 5; dekhu chhaina((a + b) barabar 7);");
     vm._dump_stack();
 }
