@@ -7,6 +7,8 @@ pub mod compiler;
 pub mod chunk;
 use chunk::{Chunk, PrimType, OpCode};
 
+use std::collections::HashMap;
+
 const STACK_MAX: u32 = 256;
 
 enum InterpResult
@@ -21,7 +23,8 @@ struct VirtMac
 {
     chunk: chunk::Chunk,
     ip: usize,
-    stack: Vec<PrimType>
+    stack: Vec<PrimType>,
+    globals: HashMap<String, PrimType>
 }
 
 impl VirtMac
@@ -31,7 +34,8 @@ impl VirtMac
         VirtMac {
             chunk,
             ip: 0,
-            stack: Vec::new()
+            stack: Vec::new(),
+            globals: HashMap::<String, PrimType>::new()
         }
     }
 
@@ -73,7 +77,7 @@ impl VirtMac
     fn compile(&mut self, source: &str) -> InterpResult
     {
         let mut s: scanner::Scanner = scanner::Scanner::new(String::from(source));
-        let mut tokens: Vec<scanner::Token> = s.start_scan();
+        let tokens: Vec<scanner::Token> = s.start_scan();
         let mut parser: compiler::Parser = compiler::Parser::new(&tokens, &mut self.chunk);
         parser.compile();
         InterpResult::OK
@@ -148,15 +152,32 @@ impl VirtMac
             OpCode::OP_DIVIDE | 
             OpCode::OP_EQ_EQ |
             OpCode::OP_GT |
-            OpCode::OP_LT => {
-                self._interpret_binary_instr(instr);
-            },
+            OpCode::OP_LT => self._interpret_binary_instr(instr),
             OpCode::OP_NEGATE => self._perform_negate_op(),
             OpCode::OP_NOT => self._perform_not_op(),
             OpCode::OP_PRINT => self._interpret_print_stmt(),
             OpCode::OP_POP => { self.stack_pop(); },
+            OpCode::OP_DEF_GLOBAL => {
+                let name: PrimType = self.chunk.read_const();
+                println!("global var name: {:?}", name);
+                let value: PrimType = self.stack_pop();
+                self._define_global_var(name, value);
+                self.stack_pop();
+            }
             _ => ()
         }
+    }
+
+    fn _define_global_var(&mut self, name: PrimType, value: PrimType)
+    {
+        match name {
+            PrimType::CString(_, var) => self.globals.insert(var, value),
+            PrimType::Double(_) => unimplemented!(),
+            PrimType::Integer(_) => unimplemented!(),
+            PrimType::Boolean(_) => unimplemented!(),
+            PrimType::Nil => unimplemented!(),
+            PrimType::Unknown => unimplemented!()
+        };
     }
 
     fn _interpret_print_stmt(&mut self)
@@ -399,18 +420,23 @@ impl VirtMac
 use std::{env, fs};
 
 fn main() {
-    let _args: Vec<String> = env::args().collect();
-    if _args.len() < 2
-    {
-        println!("Usage: cargo run <file_path>");
-        std::process::exit(12);
-    }
+    // let _args: Vec<String> = env::args().collect();
+    // if _args.len() < 2
+    // {
+    //     println!("Usage: cargo run <file_path>");
+    //     std::process::exit(12);
+    // }
 
-    let file_path = &_args.get(1usize);
-    let source_code: String = fs::read_to_string(file_path.unwrap()).expect("Not able to read the source file");
-
+    // let file_path = &_args.get(1usize);
+    // let source_code: String = match fs::read_to_string(file_path.unwrap()) {
+    //     Ok(content) => content,
+    //     Err(error) => {
+    //         println!("Tapaile diyeko file lai padhna sakiyena.");
+    //         std::process::exit(15);
+    //     }
+    // };
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret(&source_code);
+    vm.interpret("rakha a; rakha b; dekhau 5 thulo 4; dekhau sahi;");
     vm._dump_stack();
 }
