@@ -45,18 +45,20 @@ pub struct Token
     pub token_type: TokenType,
     pub lexeme: String,
     pub literal: Option<String>,
-    pub line: usize
+    pub line: usize,
+    pub column: usize
 }
 
 impl Token
 {
-    pub fn new(token_type: TokenType, lexeme: String, literal: Option<String>, line: usize) -> Token
+    pub fn new(token_type: TokenType, lexeme: String, literal: Option<String>, line: usize, column: usize) -> Token
     {
         Token {
             token_type,
             lexeme,
             literal,
-            line
+            line,
+            column
         }
     }
 
@@ -66,7 +68,8 @@ impl Token
             token_type: TokenType::TOKEN_NONE,
             lexeme: String::from(""),
             literal: Option::Some(String::from("")),
-            line: 1
+            line: 1,
+            column: 1
         }
     }
 }
@@ -139,7 +142,8 @@ impl Scanner
             token_type,
             lexeme,
             literal,
-            line: self.line
+            line: self.line,
+            column: self.current
         }
     }
 
@@ -168,39 +172,39 @@ impl Scanner
         }
         else if chr == '/'
         {
-            Token::new(TokenType::TOKEN_SLASH, String::from("/"), Option::<_>::None, self.line)
+            Token::new(TokenType::TOKEN_SLASH, String::from("/"), Option::<_>::None, self.line, self.current)
         }
         else if chr == '&'
         {
-            Token::new(TokenType::TOKEN_AND, String::from("&"), Option::<_>::None, self.line)
+            Token::new(TokenType::TOKEN_AND, String::from("&"), Option::<_>::None, self.line, self.current)
         }
         else if chr == '|'
         {
-            Token::new(TokenType::TOKEN_OR, String::from("|"), Option::<_>::None, self.line)
+            Token::new(TokenType::TOKEN_OR, String::from("|"), Option::<_>::None, self.line, self.current)
         }
         else if chr == '{'
         {
-            Token::new(TokenType::TOKEN_LEFT_BRACE, String::from("{"), Option::<_>::None, self.line)
+            Token::new(TokenType::TOKEN_LEFT_BRACE, String::from("{"), Option::<_>::None, self.line, self.current)
         }
         else if chr == '}'
         {
-            Token::new(TokenType::TOKEN_RIGHT_BRACE, String::from("}"), Option::<_>::None, self.line)
+            Token::new(TokenType::TOKEN_RIGHT_BRACE, String::from("}"), Option::<_>::None, self.line, self.current)
         }
         else if chr == '['
         {
-            Token::new(TokenType::TOKEN_LEFT_BRACEKT, String::from("["), Option::<_>::None, self.line)
+            Token::new(TokenType::TOKEN_LEFT_BRACEKT, String::from("["), Option::<_>::None, self.line, self.current)
         }
         else if chr == ']'
         {
-            Token::new(TokenType::TOKEN_RIGHT_BRACKET, String::from("]"), Option::<_>::None, self.line)
+            Token::new(TokenType::TOKEN_RIGHT_BRACKET, String::from("]"), Option::<_>::None, self.line, self.current)
         }
         else if chr == '('
         {
-            Token::new(TokenType::TOKEN_LEFT_PAREN, String::from("("), Option::<_>::None, self.line)
+            Token::new(TokenType::TOKEN_LEFT_PAREN, String::from("("), Option::<_>::None, self.line, self.current)
         }
         else if chr == ')'
         {
-            Token::new(TokenType::TOKEN_RIGHT_PAREN, String::from(")"), Option::<_>::None, self.line)
+            Token::new(TokenType::TOKEN_RIGHT_PAREN, String::from(")"), Option::<_>::None, self.line, self.current)
         }
         else if chr == '_' || chr.is_alphabetic()
         {
@@ -221,14 +225,14 @@ impl Scanner
         {
             let _ = self.advance();
             let output: &str = self._parse_string();
-            Token::new(TokenType::TOKEN_STRING, String::from(output), Option::Some(String::from(output)), self.line)
+            Token::new(TokenType::TOKEN_STRING, String::from(output), Option::Some(String::from(output)), self.line, self.current)
         }
         else if chr.is_ascii_digit()
         {
             let (number, is_double): (&str, bool) = self._parse_number();
             match is_double {
-                true => Token::new(TokenType::TOKEN_FLOAT_NUM, String::from(number), Option::Some(String::from(number)), self.line),
-                false => Token::new(TokenType::TOKEN_INT_NUM, String::from(number), Option::Some(String::from(number)), self.line)
+                true => Token::new(TokenType::TOKEN_FLOAT_NUM, String::from(number), Option::Some(String::from(number)), self.line, self.current),
+                false => Token::new(TokenType::TOKEN_INT_NUM, String::from(number), Option::Some(String::from(number)), self.line, self.current)
             }
         }
         else if chr == '\n'
