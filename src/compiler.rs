@@ -119,9 +119,13 @@ impl<'compiling> Parser<'compiling>
         let var_name = &self.previous.lexeme;
         if self._match(&TokenType::TOKEN_MA)
         {
-            println!("Decalaring variable: {}", var_name);
             self.parse_expression();
         }
+        else 
+        {
+            self.emit_bytecode(chunk::OpCode::OP_NIL as u8);
+        }
+        println!("Decalaring variable: {}", var_name);
         self.consume(TokenType::TOKEN_SEMICOLON, &format!("Tapaile sayed '{}' bhanne variable banaisake pachhi ';' lekhna chhutaunu bhayo hola.", var_name));
     }
 
