@@ -165,14 +165,19 @@ impl VirtMac
             },
             OpCode::OP_LOAD_GLOBAL => {
                 let name: PrimType = self.chunk.read_const();
-                #[allow(clippy::single_match)]
-                match name {
-                    PrimType::CString(_, value) => {
-                        let value = self.globals.get(&value);
-                        self.stack_push(value.unwrap().clone());
-                    },
-                    _ => ()
-                }
+                self._load_global_into_stack(name);
+            },
+            _ => ()
+        }
+    }
+
+    fn _load_global_into_stack(&mut self, var_name: PrimType)
+    {
+        #[allow(clippy::single_match)]
+        match var_name {
+            PrimType::CString(_, value) => {
+                let value = self.globals.get(&value);
+                self.stack_push(value.unwrap().clone());
             },
             _ => ()
         }
