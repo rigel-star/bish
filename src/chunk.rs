@@ -30,6 +30,8 @@ pub enum OpCode
     OP_NOT = 18,
     OP_PRINT = 19,
     OP_POP = 20,
+    OP_DEF_GLOBAL = 21,
+    OP_LOAD_GLOBAL = 22,
     OP_COUNT
 }
 
@@ -60,6 +62,8 @@ impl OpCode
             18 => OpCode::OP_NOT,
             19 => OpCode::OP_PRINT,
             20 => OpCode::OP_POP,
+            21 => OpCode::OP_DEF_GLOBAL,
+            22 => OpCode::OP_LOAD_GLOBAL,
             _ => OpCode::OP_NOP
         }
     }
