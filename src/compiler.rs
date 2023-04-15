@@ -28,6 +28,7 @@ enum Precedence
 
 pub struct Parser<'compiling>
 {
+    source_file_path: String,
     tokens: &'compiling Vec<scanner::Token>,
     chunk: &'compiling mut chunk::Chunk,
     current: &'compiling scanner::Token,
@@ -41,9 +42,10 @@ pub struct Parser<'compiling>
 /* 'static-like' method definitions */
 impl<'compiling> Parser<'compiling>
 {
-    pub fn new(tokens: &'compiling Vec<scanner::Token>, chunk: &'compiling mut chunk::Chunk) -> Parser<'compiling>
+    pub fn new(source_file_path: String, tokens: &'compiling Vec<scanner::Token>, chunk: &'compiling mut chunk::Chunk) -> Parser<'compiling>
     {
         Parser {
+            source_file_path,
             tokens,
             chunk,
             current: &tokens[0],
@@ -201,7 +203,7 @@ impl<'compiling> Parser<'compiling>
             }
             else
             {
-                panic!("Expected expression!")
+                self.error_at(self.counter - 1, format!("Expression dinus. '{}' lai expression jasari mulyankan garna sakiyena.", self.previous.lexeme).as_str());
             }
         }
 
@@ -357,7 +359,7 @@ impl<'compiling> Parser<'compiling>
     fn error_at(&mut self, token_idx: usize, message: &str)
     {
         let token: &scanner::Token = &self.tokens[token_idx - 1];
-        print!("[Line: {}] Compilation error", token.line);
+        print!("\x1b[1;31mCompilation error\x1b[0;37m");
         match token.token_type
         {
             scanner::TokenType::TOKEN_NONE =>
@@ -370,7 +372,8 @@ impl<'compiling> Parser<'compiling>
             }
         }
 
-        println!(": {}", message);
+        print!(": {}", message);
+        println!("\n  \x1b[1;34m-->\x1b[0;37m {}:{}\n", self.source_file_path, token.line);
         self.panic_mode = true;
         self.had_error = true;
     }

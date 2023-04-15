@@ -75,18 +75,25 @@ impl VirtMac
         }
     }
 
-    fn compile(&mut self, source: &str) -> InterpResult
+    fn compile(&mut self, source_file_path: &str) -> InterpResult
     {
-        let mut s: scanner::Scanner = scanner::Scanner::new(String::from(source));
+        let source_code: String = match fs::read_to_string(source_file_path) {
+            Ok(content) => content,
+            Err(error) => {
+                println!("Tapaile diyeko file lai padhna sakiyena.");
+                std::process::exit(15);
+            }
+        };
+        let mut s: scanner::Scanner = scanner::Scanner::new(source_code);
         let tokens: Vec<scanner::Token> = s.start_scan();
-        let mut parser: compiler::Parser = compiler::Parser::new(&tokens, &mut self.chunk);
+        let mut parser: compiler::Parser = compiler::Parser::new(source_file_path.to_owned(), &tokens, &mut self.chunk);
         if parser.compile() == compiler::CompilationResult::Ok { InterpResult::OK }
         else { InterpResult::COMPILE_ERROR }
     }
 
-    fn interpret(&mut self, source: &str) -> InterpResult
+    fn interpret(&mut self, source_file_path: &str) -> InterpResult
     {
-        if InterpResult::COMPILE_ERROR == self.compile(source)
+        if InterpResult::COMPILE_ERROR == self.compile(source_file_path)
         {
             println!("compile error. terminated.");
             std::process::exit(1);
@@ -443,16 +450,9 @@ fn main() {
         std::process::exit(12);
     }
 
-    let file_path = &_args.get(1usize);
-    let source_code: String = match fs::read_to_string(file_path.unwrap()) {
-        Ok(content) => content,
-        Err(error) => {
-            println!("Tapaile diyeko file lai padhna sakiyena.");
-            std::process::exit(15);
-        }
-    };
+    let file_path = &_args.get(1usize).clone();
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret(&source_code);
+    vm.interpret(file_path.unwrap());
     vm._dump_stack();
 }
