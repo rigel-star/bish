@@ -81,6 +81,13 @@ impl<'compiling> Parser<'compiling>
     }
 }
 
+#[derive(PartialEq, Eq)]
+pub enum CompilationResult
+{
+    Ok,
+    Error
+}
+
 impl<'compiling> Parser<'compiling>
 {
     fn debugg(&self, fn_name: &str)
@@ -90,13 +97,15 @@ impl<'compiling> Parser<'compiling>
     }
 
     #[inline]
-    pub fn compile(&mut self)
+    pub fn compile(&mut self) -> CompilationResult
     {
         // self.advance();
         while !self._match(&scanner::TokenType::TOKEN_NONE)
         {
             self._parse_decl_stmt();
         }
+        if self.had_error { CompilationResult::Error }
+        else { CompilationResult::Ok }
     }
 
     #[inline]

@@ -11,6 +11,7 @@ use std::collections::HashMap;
 
 const STACK_MAX: u32 = 256;
 
+#[derive(PartialEq, Eq)]
 enum InterpResult
 {
     COMPILE_ERROR = 0,
@@ -79,16 +80,15 @@ impl VirtMac
         let mut s: scanner::Scanner = scanner::Scanner::new(String::from(source));
         let tokens: Vec<scanner::Token> = s.start_scan();
         let mut parser: compiler::Parser = compiler::Parser::new(&tokens, &mut self.chunk);
-        parser.compile();
-        InterpResult::OK
+        if parser.compile() == compiler::CompilationResult::Ok { InterpResult::OK }
+        else { InterpResult::COMPILE_ERROR }
     }
 
     fn interpret(&mut self, source: &str) -> InterpResult
     {
-        let compiler_status: InterpResult = self.compile(source);
-        if let InterpResult::INTERPRET_COMPILE_ERROR = compiler_status
+        if InterpResult::COMPILE_ERROR == self.compile(source)
         {
-            println!("Compile error!");
+            println!("compile error. terminated.");
             std::process::exit(1);
         }
 
@@ -431,23 +431,23 @@ impl VirtMac
 use std::{env, fs};
 
 fn main() {
-    // let _args: Vec<String> = env::args().collect();
-    // if _args.len() < 2
-    // {
-    //     println!("Usage: cargo run <file_path>");
-    //     std::process::exit(12);
-    // }
+    let _args: Vec<String> = env::args().collect();
+    if _args.len() < 2
+    {
+        println!("Usage: cargo run <file_path>");
+        std::process::exit(12);
+    }
 
-    // let file_path = &_args.get(1usize);
-    // let source_code: String = match fs::read_to_string(file_path.unwrap()) {
-    //     Ok(content) => content,
-    //     Err(error) => {
-    //         println!("Tapaile diyeko file lai padhna sakiyena.");
-    //         std::process::exit(15);
-    //     }
-    // };
+    let file_path = &_args.get(1usize);
+    let source_code: String = match fs::read_to_string(file_path.unwrap()) {
+        Ok(content) => content,
+        Err(error) => {
+            println!("Tapaile diyeko file lai padhna sakiyena.");
+            std::process::exit(15);
+        }
+    };
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret("rakha a ma 2; rakha b ma 5; dekhu chhaina((a + b) barabar 7);");
+    vm.interpret(&source_code);
     vm._dump_stack();
 }
