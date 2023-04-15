@@ -3,6 +3,7 @@
 #![allow(non_camel_case_types)]
 
 use std::collections::HashMap;
+use std::fs;
 
 use crate::scanner;
 use crate::chunk;
@@ -24,12 +25,12 @@ enum Precedence
     PREC_PRIMARY
 }
 
-pub struct Parser<'compiling: 'pointer, 'pointer>
+pub struct Parser<'compiling>
 {
     tokens: &'compiling Vec<scanner::Token>,
     chunk: &'compiling mut chunk::Chunk,
-    current: &'pointer scanner::Token,
-    previous: &'pointer scanner::Token,
+    current: &'compiling scanner::Token,
+    previous: &'compiling scanner::Token,
     counter: usize,
     had_error: bool,
     panic_mode: bool,
@@ -37,9 +38,9 @@ pub struct Parser<'compiling: 'pointer, 'pointer>
 }
 
 /* 'static-like' method definitions */
-impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
+impl<'compiling> Parser<'compiling>
 {
-    pub fn new(tokens: &'compiling Vec<scanner::Token>, chunk: &'compiling mut chunk::Chunk) -> Parser<'compiling, 'pointer>
+    pub fn new(tokens: &'compiling Vec<scanner::Token>, chunk: &'compiling mut chunk::Chunk) -> Parser<'compiling>
     {
         Parser {
             tokens,
@@ -79,7 +80,7 @@ impl<'compiling, 'pointer> Parser<'compiling, 'pointer>
     }
 }
 
-impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
+impl<'compiling> Parser<'compiling>
 {
     fn debugg(&self, fn_name: &str)
     {
@@ -333,7 +334,7 @@ impl<'compiling: 'pointer, 'pointer> Parser<'compiling, 'pointer>
     fn error_at(&mut self, token_idx: usize, message: &str)
     {
         let token: &scanner::Token = &self.tokens[token_idx - 1];
-        print!("[Line: {}] Error", token.line);
+        print!("[Line: {}] Compilation error", token.line);
         match token.token_type
         {
             scanner::TokenType::TOKEN_NONE =>
