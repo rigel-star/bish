@@ -116,7 +116,8 @@ impl<'compiling> Parser<'compiling>
     fn _parse_var_decl_stmt(&mut self)
     {
         self.consume(TokenType::TOKEN_IDENTIFIER, "Aakhir kun chai variable ma rakhne ta? Naam pani dinus na variable ko.");
-        let var_name = &self.previous.lexeme;
+        let var_name: &String = &self.previous.lexeme;
+        self.chunk.write_const(chunk::PrimType::CString(var_name.len(), var_name.clone()));
         if self._match(&TokenType::TOKEN_MA)
         {
             self.parse_expression();
@@ -125,8 +126,8 @@ impl<'compiling> Parser<'compiling>
         {
             self.emit_bytecode(chunk::OpCode::OP_NIL as u8);
         }
-        println!("Decalaring variable: {}", var_name);
         self.consume(TokenType::TOKEN_SEMICOLON, &format!("Tapaile sayed '{}' bhanne variable banaisake pachhi ';' lekhna chhutaunu bhayo hola.", var_name));
+        self.emit_bytecode(chunk::OpCode::OP_DEF_GLOBAL as u8);
     }
 
     #[inline]
@@ -147,6 +148,7 @@ impl<'compiling> Parser<'compiling>
     {
         self.parse_expression();
         self.consume(scanner::TokenType::TOKEN_SEMICOLON, format!("Tapaile sayed '{}' pachhi ';' lekhna chhutaunu bhayo hola.", self.previous.lexeme).as_str());
+        // self.emit_bytecode(chunk::OpCode::OP_POP as u8);
     }
 
     fn _parse_print_stmt(&mut self)
