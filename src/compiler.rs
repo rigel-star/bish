@@ -26,6 +26,41 @@ enum Precedence
     PREC_PRIMARY
 }
 
+struct Local<'compiling>
+{
+    token: &'compiling scanner::Token,
+    depth: usize
+}
+
+struct Scope<'compiling>
+{
+    locals: Vec<&'compiling Local<'compiling>>,
+    local_count: usize,
+    scope_depth: usize,
+}
+
+impl<'compiling> Scope<'compiling>
+{
+    fn new() -> Self
+    {
+        Self {
+            locals: vec![],
+            local_count: 0,
+            scope_depth: 0
+        }
+    }
+
+    fn being_scope(&mut self)
+    {
+        self.scope_depth += 1;
+    }
+
+    fn end_scope(&mut self)
+    {
+        self.scope_depth -= 1;
+    }
+}
+
 pub struct Parser<'compiling>
 {
     source_file_path: String,
@@ -135,7 +170,7 @@ impl<'compiling> Parser<'compiling>
         if self._match(&TokenType::TOKEN_MA)
         {
             self.parse_expression();
-            self.consume(TokenType::TOKEN_SEMICOLON, &format!("Tapaile '{}' bhanne variable banai sake pachhi 'ma' lekhnu bhayeko chha. Tasartha 'ma' pachhadi kae value dinus. '{}' chai aasha gariyeko thiyena.", var_name, self.previous.lexeme));
+            self.consume(TokenType::TOKEN_SEMICOLON, "Tapaile sayed 'rakha' statement lai antya garna ';' lekhna chhutaunu bhayo hola.");
         }
         else 
         {
@@ -159,10 +194,22 @@ impl<'compiling> Parser<'compiling>
         {
             self._parse_print_stmt();  
         }
+        else if self.previous.token_type == scanner::TokenType::TOKEN_LEFT_BRACE
+        {
+            self._parse_block_stmt();
+        }
         else
         {
             self._parse_expr_stmt();
         }
+    }
+
+    fn _parse_block_stmt(&mut self)
+    {
+        while !self._check(TokenType::TOKEN_RIGHT_BRACE) && !self._check(TokenType::TOKEN_NONE) {
+            self._parse_decl_stmt();
+        } 
+        self.consume(TokenType::TOKEN_RIGHT_BRACE, "'{' lekhisake pachhi '}' pani lekhnus.");
     }
 
     #[inline]
@@ -361,6 +408,11 @@ impl<'compiling> Parser<'compiling>
         {
             self.current = &self.tokens[self.counter];
         }
+    }
+
+    fn _check(&self, typ: TokenType) -> bool
+    {
+        self.current.token_type == typ
     }
 
     fn error_at_current(&mut self, message: &str)
