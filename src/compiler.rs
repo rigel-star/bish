@@ -105,6 +105,7 @@ impl<'compiling> Parser<'compiling>
         while !self._match(&scanner::TokenType::TOKEN_NONE)
         {
             self._parse_decl_stmt();
+            if self.panic_mode{ self._sync_err(); }
         }
         if self.had_error { CompilationResult::Error }
         else { CompilationResult::Ok }
@@ -122,23 +123,32 @@ impl<'compiling> Parser<'compiling>
         { 
             self._parse_stmt(); 
         }
-        if self.panic_mode { self._sync_err(); }
     }
 
     fn _parse_var_decl_stmt(&mut self)
     {
-        self.consume(TokenType::TOKEN_IDENTIFIER, "Aakhir kun chai variable ma rakhne ta? Naam pani dinus na variable ko.");
+        if !self._match(&scanner::TokenType::TOKEN_IDENTIFIER) {
+            self.error_at_current(&format!("'rakha' lekhe pachhi tapaile variable ko naam dina parne hunchha. '{}' chai aasha gariyeko thiyena.", self.current.lexeme));
+            return;
+        }
         let var_name: &String = &self.previous.lexeme;
         if self._match(&TokenType::TOKEN_MA)
         {
             self.parse_expression();
+            self.consume(TokenType::TOKEN_SEMICOLON, &format!("Tapaile '{}' bhanne variable banai sake pachhi 'ma' lekhnu bhayeko chha. Tasartha 'ma' pachhadi kae value dinus. '{}' chai aasha gariyeko thiyena.", var_name, self.previous.lexeme));
         }
         else 
         {
             self.emit_bytecode(chunk::OpCode::OP_NIL as u8);
+            if !self._match(&TokenType::TOKEN_SEMICOLON) {
+                if self.current.token_type == scanner::TokenType::TOKEN_NONE {
+                    self.consume(TokenType::TOKEN_SEMICOLON, &format!("Yadi '{}' ma kae value rakhnu chhaina bhane ';' lekhnus.", var_name));
+                    return;
+                }
+                self.consume(TokenType::TOKEN_SEMICOLON, &format!("Yadi '{}' ma kae value rakhnu chhaina bhane ';' lekhnus. '{}' chai aasha gariyeko thiyena.", var_name, self.current.lexeme));
+            }
         }
         self.chunk.write_const(chunk::PrimType::CString(var_name.len(), var_name.clone()));
-        self.consume(TokenType::TOKEN_SEMICOLON, &format!("Tapaile sayed '{}' bhanne variable banaisake pachhi ';' lekhna chhutaunu bhayo hola.", var_name));
         self.emit_bytecode(chunk::OpCode::OP_DEF_GLOBAL as u8);
     }
 
@@ -166,7 +176,7 @@ impl<'compiling> Parser<'compiling>
     fn _parse_print_stmt(&mut self)
     {
         self.parse_expression();
-        self.consume(TokenType::TOKEN_SEMICOLON, "Tapaile sayed dekahu statement sakiye pachhi ';' lekhna chhutaunu bhayo hola.");
+        self.consume(TokenType::TOKEN_SEMICOLON, "Tapaile sayed dekhau statement sakiye pachhi ';' lekhna chhutaunu bhayo hola.");
         self.emit_bytecode(chunk::OpCode::OP_PRINT as u8);
     }
 
@@ -175,7 +185,7 @@ impl<'compiling> Parser<'compiling>
         self.panic_mode = false;
         while self.current.token_type != scanner::TokenType::TOKEN_NONE
         {
-            if self.previous.token_type == scanner::TokenType::TOKEN_SEMICOLON { return; }
+            if self.current.token_type == scanner::TokenType::TOKEN_SEMICOLON { return; }
             match self.current.token_type
             {
                 scanner::TokenType::TOKEN_DEKHAU | scanner::TokenType::TOKEN_GHUMAU => return,
@@ -183,6 +193,7 @@ impl<'compiling> Parser<'compiling>
             }
             self.advance();
         }
+        self.panic_mode = false;
     }
 
     #[inline]
@@ -193,6 +204,7 @@ impl<'compiling> Parser<'compiling>
 
     fn parse_precedence(&mut self, prec: Precedence)
     {
+        let now: &scanner::Token = self.previous;
         self.advance();
         let prefix = self.get_rule(self.previous.token_type);
         if let Some(func_tuple) = prefix 
@@ -203,7 +215,7 @@ impl<'compiling> Parser<'compiling>
             }
             else
             {
-                self.error_at(self.counter - 1, format!("Expression dinus. '{}' lai expression jasari mulyankan garna sakiyena.", self.previous.lexeme).as_str());
+                self.error_at(self.counter - 1, &format!("'{}' pachhadi expression dinus.", now.lexeme));
             }
         }
 
@@ -359,22 +371,10 @@ impl<'compiling> Parser<'compiling>
     fn error_at(&mut self, token_idx: usize, message: &str)
     {
         let token: &scanner::Token = &self.tokens[token_idx - 1];
-        print!("\x1b[1;31mCompilation error\x1b[0;37m");
-        match token.token_type
-        {
-            scanner::TokenType::TOKEN_NONE =>
-            {
-                print!(" at end");
-            },
-            _ => 
-            {
-                print!(" at '{}'", token.lexeme);
-            }
-        }
-
-        print!(": {}", message);
-        println!("\n  \x1b[1;34m-->\x1b[0;37m {}:{}\n", self.source_file_path, token.line);
-        self.panic_mode = true;
+        print!("\x1b[1;31mCompilation error\x1b[0;37m: {}", message);
+        println!("\n  \x1b[1;34m-->\x1b[0;37m {}:{}:{}", self.source_file_path, token.line, token.column);
+        println!("\n\x1b[0;37m");
+        self._sync_err();
         self.had_error = true;
     }
 }
