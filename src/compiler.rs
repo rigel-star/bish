@@ -26,41 +26,6 @@ enum Precedence
     PREC_PRIMARY
 }
 
-struct Local<'compiling>
-{
-    token: &'compiling scanner::Token,
-    depth: usize
-}
-
-struct Scope<'compiling>
-{
-    locals: Vec<&'compiling Local<'compiling>>,
-    local_count: usize,
-    scope_depth: usize,
-}
-
-impl<'compiling> Scope<'compiling>
-{
-    fn new() -> Self
-    {
-        Self {
-            locals: vec![],
-            local_count: 0,
-            scope_depth: 0
-        }
-    }
-
-    fn being_scope(&mut self)
-    {
-        self.scope_depth += 1;
-    }
-
-    fn end_scope(&mut self)
-    {
-        self.scope_depth -= 1;
-    }
-}
-
 pub struct Parser<'compiling>
 {
     source_file_path: String,
