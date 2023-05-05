@@ -36,6 +36,8 @@ pub enum TokenType
     TOKEN_SANO,
     TOKEN_BARABAR,
     TOKEN_CHHAINA,
+    TOKEN_YADI,
+    TOKEN_NATRA,
     TOKEN_NONE
 }
 
@@ -101,6 +103,8 @@ impl Scanner
         keywords.insert(String::from("sano"), TokenType::TOKEN_SANO);
         keywords.insert(String::from("barabar"), TokenType::TOKEN_BARABAR);
         keywords.insert(String::from("chhaina"), TokenType::TOKEN_CHHAINA);
+        keywords.insert(String::from("yadi"), TokenType::TOKEN_YADI);
+        keywords.insert(String::from("natra"), TokenType::TOKEN_NATRA);
 
         Scanner {
             current: 0,
