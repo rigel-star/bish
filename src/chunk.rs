@@ -32,6 +32,7 @@ pub enum OpCode
     OP_POP = 20,
     OP_DEF_GLOBAL = 21,
     OP_LOAD_GLOBAL = 22,
+    OP_JMP_IF_FALSE = 23,
     OP_COUNT
 }
 
@@ -64,6 +65,7 @@ impl OpCode
             20 => OpCode::OP_POP,
             21 => OpCode::OP_DEF_GLOBAL,
             22 => OpCode::OP_LOAD_GLOBAL,
+            23 => OpCode::OP_JMP_IF_FALSE,
             _ => OpCode::OP_NOP
         }
     }
