@@ -104,15 +104,14 @@ impl VirtMac
             return InterpResult::OK;
         }
 
-        let mut counter: usize = 0;
         loop
         {
             { 
-                let code: u8 = self.chunk.code[counter];
+                let code: u8 = self.chunk.code[self.ip];
                 self._interpret_instr(code); 
             }
-            counter += 1;
-            if counter == self.chunk.code.len()
+            self.ip += 1;
+            if self.ip == self.chunk.code.len()
             {
                 break;
             }
