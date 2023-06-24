@@ -81,6 +81,7 @@ pub struct Scanner
     current: usize,
     start: usize,
     line: usize,
+    column_counter: usize,
     source: String,
     keywords: HashMap<String, TokenType>
 }
@@ -110,6 +111,7 @@ impl Scanner
             current: 0,
             start: 0,
             line: 1,
+            column_counter: 1,
             source,
             keywords
         }
@@ -147,7 +149,7 @@ impl Scanner
             lexeme,
             literal,
             line: self.line,
-            column: self.current
+            column: self.column_counter
         }
     }
 
@@ -176,39 +178,39 @@ impl Scanner
         }
         else if chr == '/'
         {
-            Token::new(TokenType::TOKEN_SLASH, String::from("/"), Option::<_>::None, self.line, self.current)
+            Token::new(TokenType::TOKEN_SLASH, String::from("/"), Option::<_>::None, self.line, self.column_counter)
         }
         else if chr == '&'
         {
-            Token::new(TokenType::TOKEN_AND, String::from("&"), Option::<_>::None, self.line, self.current)
+            Token::new(TokenType::TOKEN_AND, String::from("&"), Option::<_>::None, self.line, self.column_counter)
         }
         else if chr == '|'
         {
-            Token::new(TokenType::TOKEN_OR, String::from("|"), Option::<_>::None, self.line, self.current)
+            Token::new(TokenType::TOKEN_OR, String::from("|"), Option::<_>::None, self.line, self.column_counter)
         }
         else if chr == '{'
         {
-            Token::new(TokenType::TOKEN_LEFT_BRACE, String::from("{"), Option::<_>::None, self.line, self.current)
+            Token::new(TokenType::TOKEN_LEFT_BRACE, String::from("{"), Option::<_>::None, self.line, self.column_counter)
         }
         else if chr == '}'
         {
-            Token::new(TokenType::TOKEN_RIGHT_BRACE, String::from("}"), Option::<_>::None, self.line, self.current)
+            Token::new(TokenType::TOKEN_RIGHT_BRACE, String::from("}"), Option::<_>::None, self.line, self.column_counter)
         }
         else if chr == '['
         {
-            Token::new(TokenType::TOKEN_LEFT_BRACEKT, String::from("["), Option::<_>::None, self.line, self.current)
+            Token::new(TokenType::TOKEN_LEFT_BRACEKT, String::from("["), Option::<_>::None, self.line, self.column_counter)
         }
         else if chr == ']'
         {
-            Token::new(TokenType::TOKEN_RIGHT_BRACKET, String::from("]"), Option::<_>::None, self.line, self.current)
+            Token::new(TokenType::TOKEN_RIGHT_BRACKET, String::from("]"), Option::<_>::None, self.line, self.column_counter)
         }
         else if chr == '('
         {
-            Token::new(TokenType::TOKEN_LEFT_PAREN, String::from("("), Option::<_>::None, self.line, self.current)
+            Token::new(TokenType::TOKEN_LEFT_PAREN, String::from("("), Option::<_>::None, self.line, self.column_counter)
         }
         else if chr == ')'
         {
-            Token::new(TokenType::TOKEN_RIGHT_PAREN, String::from(")"), Option::<_>::None, self.line, self.current)
+            Token::new(TokenType::TOKEN_RIGHT_PAREN, String::from(")"), Option::<_>::None, self.line, self.column_counter)
         }
         else if chr == '_' || chr.is_alphabetic()
         {
@@ -229,19 +231,20 @@ impl Scanner
         {
             let _ = self.advance();
             let output: &str = self._parse_string();
-            Token::new(TokenType::TOKEN_STRING, String::from(output), Option::Some(String::from(output)), self.line, self.current)
+            Token::new(TokenType::TOKEN_STRING, String::from(output), Option::Some(String::from(output)), self.line, self.column_counter)
         }
         else if chr.is_ascii_digit()
         {
             let (number, is_double): (&str, bool) = self._parse_number();
             match is_double {
-                true => Token::new(TokenType::TOKEN_FLOAT_NUM, String::from(number), Option::Some(String::from(number)), self.line, self.current),
-                false => Token::new(TokenType::TOKEN_INT_NUM, String::from(number), Option::Some(String::from(number)), self.line, self.current)
+                true => Token::new(TokenType::TOKEN_FLOAT_NUM, String::from(number), Option::Some(String::from(number)), self.line, self.column_counter),
+                false => Token::new(TokenType::TOKEN_INT_NUM, String::from(number), Option::Some(String::from(number)), self.line, self.column_counter)
             }
         }
         else if chr == '\n'
         {
             self.line += 1;
+            self.column_counter = 0;
             Token::none()
         }
         else 
@@ -297,6 +300,7 @@ impl Scanner
         {
             let result: &u8 = &self.source.as_bytes()[self.current];
             self.current += 1;
+            self.column_counter += 1;
             result
         }
         else {
