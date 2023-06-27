@@ -91,21 +91,17 @@ impl VirtMac
         else { InterpResult::COMPILE_ERROR }
     }
 
-    fn interpret(&mut self, source_file_path: &str) -> InterpResult
-    {
-        if InterpResult::COMPILE_ERROR == self.compile(source_file_path)
-        {
+    fn interpret(&mut self, source_file_path: &str) -> InterpResult {
+        if InterpResult::COMPILE_ERROR == self.compile(source_file_path) {
             println!("compile error. terminated.");
             std::process::exit(1);
         }
 
-        if self.chunk.size < 1
-        {
+        if self.chunk.size < 1 {
             return InterpResult::OK;
         }
 
-        loop
-        {
+        loop {
             { 
                 let code: u8 = self.chunk.code[self.ip];
                 self._interpret_instr(code); 
@@ -115,7 +111,7 @@ impl VirtMac
             {
                 break;
             }
-        }
+        } 
         InterpResult::OK
     }
 
@@ -173,6 +169,28 @@ impl VirtMac
                 let name: PrimType = self.chunk.read_const();
                 self._load_global_into_stack(name);
             },
+            OpCode::OP_JMP_IF_FALSE => {
+                let first: u16 = *self.chunk.code.get(self.ip + 1).unwrap() as u16;
+                let second: u16 = *self.chunk.code.get(self.ip + 2).unwrap() as u16;
+                let offset: u16 = (first << 8) | second;
+                let condition: PrimType = self.stack_pop();
+                if let PrimType::Boolean(cond) = condition {
+                    if !cond {
+                        // Reading every constant value and discarding them from constant pool that 
+                        // are defined inside this 'yadi' statment.
+                        while self.ip < (offset as usize + 2) {
+                            let bytecode: u8 = self.chunk.code[self.ip];
+                            if OpCode::from_u8(bytecode) == OpCode::OP_CONST {
+                                let _ = self.chunk.read_const();
+                            }
+                            self.ip += 1;
+                        }
+                    }
+                    else {
+                        self.ip += 2;
+                    }
+                }
+            },
             _ => ()
         }
     }
@@ -197,16 +215,10 @@ impl VirtMac
         }
     }
 
-    fn _define_global_var(&mut self, name: PrimType, value: PrimType)
-    {
-        match name {
-            PrimType::CString(_, var) => self.globals.insert(var, value),
-            PrimType::Double(_) => unimplemented!(),
-            PrimType::Integer(_) => unimplemented!(),
-            PrimType::Boolean(_) => unimplemented!(),
-            PrimType::Nil => unimplemented!(),
-            PrimType::Unknown => unimplemented!()
-        };
+    fn _define_global_var(&mut self, name: PrimType, value: PrimType) {
+        if let PrimType::CString(_, var_name) = name {
+            self.globals.insert(var_name, value);
+        } 
     }
 
     fn _interpret_print_stmt(&mut self)

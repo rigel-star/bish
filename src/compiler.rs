@@ -153,20 +153,32 @@ impl<'compiling> Parser<'compiling>
     }
 
     #[inline]
-    fn _parse_stmt(&mut self)
-    {
-        if self.previous.token_type == scanner::TokenType::TOKEN_DEKHAU
-        {
+    fn _parse_stmt(&mut self) {
+        if self.previous.token_type == scanner::TokenType::TOKEN_DEKHAU {
             self._parse_print_stmt();  
         }
-        else if self.previous.token_type == scanner::TokenType::TOKEN_LEFT_BRACE
-        {
+        else if self.previous.token_type == scanner::TokenType::TOKEN_YADI {
+            self._parse_if_stmt();
+        }
+        else if self.previous.token_type == scanner::TokenType::TOKEN_LEFT_BRACE {
             self._parse_block_stmt();
         }
-        else
-        {
+        else {
             self._parse_expr_stmt();
         }
+    }
+
+    fn _parse_if_stmt(&mut self) {
+        self.parse_expression();
+        self.emit_bytecode(chunk::OpCode::OP_JMP_IF_FALSE as u8);
+        self.emit_bytecode(0xFF);
+        self.emit_bytecode(0xFF);
+        let jump_offset: usize = self.chunk.code.len() - 2;
+        self.advance();
+        self._parse_stmt();
+        let jump_op_count: usize = self.chunk.code.len() - jump_offset - 2;
+        self.chunk.code[jump_offset] = ((jump_op_count >> 8) & 0xFF) as u8;
+        self.chunk.code[jump_offset + 1] = (jump_op_count & 0xFF) as u8;
     }
 
     fn _parse_block_stmt(&mut self)
@@ -225,10 +237,10 @@ impl<'compiling> Parser<'compiling>
             {
                 prefix_func(self);
             }
-            else
-            {
-                self.error_at(self.counter - 1, &format!("'{}' pachhadi expression dinus.", now.lexeme));
-            }
+            // else
+            // {
+            //     self.error_at(self.counter - 1, &format!("'{}' pachhadi expression dinus.", now.lexeme));
+            // }
         }
 
         // maybe prec has to be reassigned?
@@ -330,7 +342,7 @@ impl<'compiling> Parser<'compiling>
         self.consume(scanner::TokenType::TOKEN_RIGHT_PAREN, "Tapaile sayed '(' lekhi sake pachhi, teslai antya garna ')' lekhna chhutaunu bhayo hola.");
     }
 
-    fn get_rule(&mut self, token_type: scanner::TokenType) -> Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)>
+    fn get_rule(&self, token_type: scanner::TokenType) -> Option<&(Option<fn(&mut Self)>, Option<fn(&mut Self)>, Precedence)>
     {
         // println!("DEBUG[get_rule]: TokenType = {:?}", token_type);
         Some(self.rules[&token_type])
