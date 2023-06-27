@@ -1,6 +1,11 @@
-rakha a ma 4;
-rakha b ma 5;
-dekhau a thulo b;
-rakha a ma 7;
-dekhau chhaina(a sano b);
-dekhau a barabar b;
+rakha x ma "hello";
+rakha y ma "hello";
+yadi chhaina (x barabar y) {
+    dekhau "x barabar y chha";
+    dekhau "\nx ko value:";
+    dekhau x;
+    dekhau "\ny ko value:";
+    dekhau y;
+}
+
+dekhau x + y;
