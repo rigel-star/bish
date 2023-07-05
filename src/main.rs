@@ -107,7 +107,7 @@ impl VirtMac
                 self._interpret_instr(code); 
             }
             self.ip += 1;
-            if self.ip == self.chunk.code.len()
+            if self.ip >= self.chunk.code.len()
             {
                 break;
             }
@@ -175,19 +175,19 @@ impl VirtMac
                 let offset: u16 = (first << 8) | second;
                 let condition: PrimType = self.stack_pop();
                 if let PrimType::Boolean(cond) = condition {
+                    self.ip += 2; // jumping offset value
                     if !cond {
-                        // Reading every constant value and discarding them from constant pool that 
+                        // Reading and discarding every constant value them from constant pool that 
                         // are defined inside this 'yadi' statment.
-                        while self.ip < (offset as usize + 2) {
-                            let bytecode: u8 = self.chunk.code[self.ip];
+                        let mut temp_ip: usize = self.ip;
+                        while temp_ip < self.ip + (offset as usize) {
+                            let bytecode: u8 = self.chunk.code[temp_ip];
                             if OpCode::from_u8(bytecode) == OpCode::OP_CONST {
                                 let _ = self.chunk.read_const();
                             }
-                            self.ip += 1;
+                            temp_ip += 1;
                         }
-                    }
-                    else {
-                        self.ip += 2;
+                        self.ip += (offset as usize + 2);
                     }
                 }
             },
