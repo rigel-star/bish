@@ -102,10 +102,8 @@ impl VirtMac
         }
 
         loop {
-            { 
-                let code: u8 = self.chunk.code[self.ip];
-                self._interpret_instr(code); 
-            }
+            let code: u8 = self.chunk.code[self.ip];
+            self._interpret_instr(code); 
             self.ip += 1;
             if self.ip >= self.chunk.code.len()
             {
@@ -115,27 +113,17 @@ impl VirtMac
         InterpResult::OK
     }
 
-    fn _interpret_instr(&mut self, i: u8)
-    {
+    fn _interpret_instr(&mut self, i: u8) {
         let instr: OpCode = OpCode::from_u8(i);
-        match instr
-        {
+        match instr {
             OpCode::OP_RETURN => { },
             OpCode::OP_NOP => (),
             OpCode::OP_CONST => {
                 let con = &self.chunk.read_const();
-                match con
-                {
-                    PrimType::Double(value) =>
-                    {
-                        self.stack_push(PrimType::Double(*value));
-                    },
-                    PrimType::Integer(value) => {
-                        self.stack_push(PrimType::Integer(*value));
-                    },
-                    PrimType::CString(len, data) => {
-                        self.stack_push(PrimType::CString(*len, data.clone()));
-                    },
+                match con {
+                    PrimType::Double(value) => self.stack_push(PrimType::Double(*value)),
+                    PrimType::Integer(value) => self.stack_push(PrimType::Integer(*value)),
+                    PrimType::CString(len, data) => self.stack_push(PrimType::CString(*len, data.clone())),
                     PrimType::Unknown => {
                         println!("PANIC: Unknown value type in constant pool!");
                         std::process::exit(1);
@@ -170,15 +158,20 @@ impl VirtMac
                 self._load_global_into_stack(name);
             },
             OpCode::OP_JMP_IF_FALSE => {
-                let first: u16 = *self.chunk.code.get(self.ip + 1).unwrap() as u16;
-                let second: u16 = *self.chunk.code.get(self.ip + 2).unwrap() as u16;
-                let offset: u16 = (first << 8) | second;
+                let offset: u16 = self._read_short_from_chunk();
+                self.ip += 2; // jumping offset value
                 let condition: PrimType = self.stack_pop();
                 if let PrimType::Boolean(cond) = condition {
-                    self.ip += 2; // jumping offset value
                     if !cond {
-                        // Reading and discarding every constant value them from constant pool that 
-                        // are defined inside this 'yadi' statment.
+                        /*
+                        * OP_JMP_IF_FALSE
+                        * OFF_1
+                        * OFF_2 <--- IP
+                        */
+                        self.ip += 1;
+
+                        // Reading and discarding every constant value from the constant pool 
+                        // that are defined inside this 'yadi' statment.
                         let mut temp_ip: usize = self.ip;
                         while temp_ip < self.ip + (offset as usize) {
                             let bytecode: u8 = self.chunk.code[temp_ip];
@@ -187,12 +180,20 @@ impl VirtMac
                             }
                             temp_ip += 1;
                         }
-                        self.ip += (offset as usize + 2);
+                        self.ip += (offset as usize);
                     }
                 }
             },
+            OpCode::OP_ELSE => {
+                self._perform_else_op();
+            },
             _ => ()
         }
+    }
+
+    fn _perform_else_op(&mut self) {
+        let offset: u16 = self._read_short_from_chunk();
+        self.ip += (offset + 2) as usize;
     }
 
     fn _load_global_into_stack(&mut self, var_name: PrimType)
@@ -265,7 +266,14 @@ impl VirtMac
                 match ok {
                     true => { self._perform_logical_op(instr, avalue, bvalue); }
                     false => { 
-                        println!("Unsupported types for this operation");
+                        println!(
+                            "Unsupported types for '{}' operation for types: '{:?}' and '{:?}'", 
+                            if instr == OpCode::OP_AND { "ra(&&)" } 
+                            else if instr == OpCode::OP_OR { "wa(||)" } 
+                            else { "unknown" }, 
+                            aa, 
+                            bb
+                        );
                         std::process::exit(3);
                     }
                 }
@@ -457,8 +465,15 @@ impl VirtMac
         println!("Type error: '{}' ra '{}' prakar ko value harulai '{}' operator lagauna mildaina.", type1, type2, op);
         std::process::exit(7);
     }
+
+    fn _read_short_from_chunk(&self) -> u16 {
+        let first: u16 = *self.chunk.code.get(self.ip + 1).unwrap() as u16;
+        let second: u16 = *self.chunk.code.get(self.ip + 2).unwrap() as u16;
+        (first << 8) | second
+    }
 }
 
+use std::fs::read_to_string;
 use std::{env, fs};
 
 fn main() {
@@ -473,5 +488,5 @@ fn main() {
     let mut c: Chunk = Chunk::new();
     let mut vm: VirtMac = VirtMac::new(c);
     vm.interpret(file_path.unwrap());
-    vm._dump_stack();
+    // vm._dump_stack();
 }

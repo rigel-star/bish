@@ -7,8 +7,8 @@ $ cargo run
 
 ## Demo Program
 ```console
-rakha x ma "hello";
-rakha y ma "hello";
+rakha x ma 5;
+rakha y ma 5;
 yadi chhaina (x barabar y) {
     dekhau "x barabar y chha";
     dekhau "\nx ko value:";

@@ -160,6 +160,9 @@ impl<'compiling> Parser<'compiling>
         else if self.previous.token_type == scanner::TokenType::TOKEN_YADI {
             self._parse_if_stmt();
         }
+        else if self.previous.token_type == scanner::TokenType::TOKEN_NATRA {
+            self._parse_natra_stmt();
+        }
         else if self.previous.token_type == scanner::TokenType::TOKEN_LEFT_BRACE {
             self._parse_block_stmt();
         }
@@ -175,7 +178,32 @@ impl<'compiling> Parser<'compiling>
         self.emit_bytecode(0xFF);
         let jump_offset: usize = self.chunk.code.len() - 2;
         self.advance();
-        self._parse_stmt();
+        self._parse_block_stmt();
+        let jump_op_count: usize = self.chunk.code.len() - jump_offset - 2;
+        self.chunk.code[jump_offset] = ((jump_op_count >> 8) & 0xFF) as u8;
+        self.chunk.code[jump_offset + 1] = (jump_op_count & 0xFF) as u8;
+    }
+
+    fn _parse_natra_stmt(&mut self) {
+        self.emit_bytecode(chunk::OpCode::OP_ELSE as u8);
+        self.emit_bytecode(0xFF);
+        self.emit_bytecode(0xFF);
+        let jump_offset: usize = self.chunk.code.len() - 2;
+        self.advance();
+        self._parse_block_stmt();
+        let jump_op_count: usize = self.chunk.code.len() - jump_offset - 2;
+        self.chunk.code[jump_offset] = ((jump_op_count >> 8) & 0xFF) as u8;
+        self.chunk.code[jump_offset + 1] = (jump_op_count & 0xFF) as u8;
+    }
+    
+    fn emit_jump_bytecode(&mut self, code: chunk::OpCode) -> usize {
+        self.emit_bytecode(code as u8);
+        self.emit_bytecode(0xFF);
+        self.emit_bytecode(0xFF);
+        (self.chunk.code.len() - 2)
+    }
+
+    fn patch_jump_stmt(&mut self, jump_offset: usize) {
         let jump_op_count: usize = self.chunk.code.len() - jump_offset - 2;
         self.chunk.code[jump_offset] = ((jump_op_count >> 8) & 0xFF) as u8;
         self.chunk.code[jump_offset + 1] = (jump_op_count & 0xFF) as u8;
