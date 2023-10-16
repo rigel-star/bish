@@ -28,8 +28,7 @@
 use std::collections::VecDeque;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum OpCode
-{
+pub enum OpCode {
     OP_NOP = 100,
     OP_RETURN = 0,
     OP_CONST = 1,
@@ -59,12 +58,9 @@ pub enum OpCode
     OP_COUNT
 }
 
-impl OpCode
-{
-    pub fn from_u8(c: u8) -> OpCode
-    {
-        match c
-        {
+impl OpCode {
+    pub fn from_u8(c: u8) -> OpCode {
+        match c {
             0 => OpCode::OP_RETURN,
             1 => OpCode::OP_CONST,
             2 => OpCode::OP_AND,
@@ -95,17 +91,14 @@ impl OpCode
     }
 }
 
-pub struct Chunk
-{
+pub struct Chunk {
     pub code: Vec<u8>,
     pub size: usize,
     pub const_pool: Pool,
 }
 
-impl Chunk
-{
-    pub fn new() -> Chunk
-    {
+impl Chunk {
+    pub fn new() -> Chunk {
         Chunk {
             code: Vec::new(),
             size: 0,
@@ -113,44 +106,44 @@ impl Chunk
         }
     }
 
-    pub fn write(&mut self, byte: OpCode)
-    {
+    #[inline]
+    pub fn write(&mut self, byte: OpCode) {
         self.code.push(byte as u8);
         self.size += 1;
     }
 
-    pub fn write_const_int(&mut self, val: i64)
-    {
+    #[inline]
+    pub fn write_const_int(&mut self, val: i64) {
         self.write(OpCode::OP_CONST);
         self.write_const(PrimType::Integer(val));
     }
 
-    pub fn write_cstring(&mut self, value: String)
-    {
+    #[inline]
+    pub fn write_cstring(&mut self, value: String) {
         self.write(OpCode::OP_CONST);
         self.write_const(PrimType::CString(value.len(), value));
     }
 
-    pub fn write_const_double(&mut self, val: f64)
-    {
+    #[inline]
+    pub fn write_const_double(&mut self, val: f64) {
         self.write(OpCode::OP_CONST);
         self.write_const(PrimType::Double(val));
     }
 
-    pub fn write_bool(&mut self, cond: bool)
-    {
+    #[inline]
+    pub fn write_bool(&mut self, cond: bool) {
         self.write(if cond { OpCode::OP_TRUE } else { OpCode::OP_FALSE });
         self.write_const(PrimType::Boolean(cond));
     }
 
-    pub fn write_nil(&mut self)
-    {
+    #[inline]
+    pub fn write_nil(&mut self) {
         self.write(OpCode::OP_NIL);
         self.write_const(PrimType::Nil);
     }
 
-    pub fn write_const(&mut self, prim_type: PrimType)
-    {
+    #[inline]
+    pub fn write_const(&mut self, prim_type: PrimType) {
         self.const_pool.data.push_back(PoolItem {
             data: prim_type,
             index: self.const_pool.size
@@ -158,13 +151,11 @@ impl Chunk
         self.const_pool.size += 1;
     }
 
-    pub fn read_const(&mut self) -> PrimType
-    {
+    pub fn read_const(&mut self) -> PrimType {
         if self.const_pool.size == 0 {}
 
         self.const_pool.size -= 1;
-        if let Some(value) = &self.const_pool.data.pop_front()
-        {
+        if let Some(value) = &self.const_pool.data.pop_front() {
             value.data.clone()
         }
         else {
@@ -172,23 +163,19 @@ impl Chunk
         }
     }
 
-    pub fn dump(&self)
-    {
+    pub fn dump(&self) {
         let mut pool_off: usize = 0;
         let mut code_off: usize = 0;
         let size: usize = self.size;
-        while code_off < size
-        {
+        while code_off < size {
             self._dump_instr(&mut code_off, &mut pool_off);
         }
     }
 
-    fn _dump_instr(&self, code_off: &mut usize, pool_off: &mut usize)
-    {
+    fn _dump_instr(&self, code_off: &mut usize, pool_off: &mut usize) {
         let instr: u8 = self.code[*code_off];
         let opcode = OpCode::from_u8(instr);
-        match opcode
-        {
+        match opcode {
             OpCode::OP_RETURN => { self._dump_simple_instr("OP_RETURN", code_off); },
             OpCode::OP_NOP => { self._dump_simple_instr("OP_NOP", code_off); },
             OpCode::OP_CONST => { *code_off += 1; *pool_off += 1; },
@@ -200,16 +187,14 @@ impl Chunk
         }
     }
 
-    fn _dump_simple_instr(&self, name: &str, code_off: &mut usize)
-    {
+    fn _dump_simple_instr(&self, name: &str, code_off: &mut usize) {
         println!("{:0>4} {}", format!("{:x}", code_off), name);
         *code_off += 1;
     }
 }
 
 #[derive(Clone, Debug)]
-pub enum PrimType
-{
+pub enum PrimType {
     Double(f64),
     Integer(i64),
     Boolean(bool),
@@ -218,12 +203,9 @@ pub enum PrimType
     Unknown
 }
 
-impl PrimType
-{
-    pub fn name(typ: &PrimType) -> String 
-    {
-        match typ 
-        {
+impl PrimType {
+    pub fn name(typ: &PrimType) -> String {
+        match typ {
             PrimType::Double(_) => String::from("float"),
             PrimType::Integer(_) => String::from("int"),
             PrimType::Boolean(_) => String::from("bool"),
@@ -234,22 +216,18 @@ impl PrimType
     }
 }
 
-pub struct Pool
-{
+pub struct Pool {
     pub data: VecDeque<PoolItem>,
     pub size: usize
 }
 
-pub struct PoolItem
-{
+pub struct PoolItem {
     pub data: PrimType,
     pub index: usize
 }
 
-impl Pool
-{
-    pub fn new() -> Pool
-    {
+impl Pool {
+    pub fn new() -> Pool {
         Pool {
             data: VecDeque::<PoolItem>::new(),
             size: 0

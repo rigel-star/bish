@@ -34,26 +34,22 @@ use std::collections::HashMap;
 const STACK_MAX: u32 = 256;
 
 #[derive(PartialEq, Eq)]
-enum InterpResult
-{
+enum InterpResult {
     COMPILE_ERROR = 0,
     RUNTIME_ERROR = 1,
     INTERPRET_COMPILE_ERROR = 2,
     OK = 3
 }
 
-struct VirtMac
-{
+struct VirtMac {
     chunk: chunk::Chunk,
     ip: usize,
     stack: Vec<PrimType>,
     globals: HashMap<String, PrimType>
 }
 
-impl VirtMac
-{
-    fn new(chunk: Chunk) -> VirtMac
-    {
+impl VirtMac {
+    fn new(chunk: Chunk) -> VirtMac {
         VirtMac {
             chunk,
             ip: 0,
@@ -62,31 +58,24 @@ impl VirtMac
         }
     }
 
-    fn stack_push(&mut self, val: PrimType)
-    {
+    fn stack_push(&mut self, val: PrimType) {
         // println!("DEBUG[stack_push]: PrimType = {:?}", &val);
         self.stack.push(val);
     }
 
-    fn stack_pop(&mut self) -> PrimType
-    {
-        if let Some(value) = &self.stack.pop()
-        {
+    fn stack_pop(&mut self) -> PrimType {
+        if let Some(value) = &self.stack.pop() {
             value.clone()
         }
-        else 
-        {
+        else {
             PrimType::Unknown
         }
     }
 
-    fn _dump_stack(&self)
-    {
+    fn _dump_stack(&self) {
         let mut idx: usize = self.stack.len();
-        for i in (0..idx).rev()
-        {
-            match self.stack[i].clone()
-            {
+        for i in (0..idx).rev() {
+            match self.stack[i].clone() {
                 PrimType::Integer(value) => println!("[{value}]"),
                 PrimType::Double(value) => println!("[{value}]"),
                 PrimType::Boolean(value) => println!("[{}]", if value { "sahi(true)" } else { "galat(false)" } ),
@@ -97,8 +86,7 @@ impl VirtMac
         }
     }
 
-    fn compile(&mut self, source_file_path: &str) -> InterpResult
-    {
+    fn compile(&mut self, source_file_path: &str) -> InterpResult {
         let source_code: String = match fs::read_to_string(source_file_path) {
             Ok(content) => content,
             Err(error) => {
@@ -218,18 +206,15 @@ impl VirtMac
         self.ip += (offset + 2) as usize;
     }
 
-    fn _load_global_into_stack(&mut self, var_name: PrimType)
-    {
+    fn _load_global_into_stack(&mut self, var_name: PrimType) {
         #[allow(clippy::single_match)]
         match var_name {
             PrimType::CString(_, value) => {
                 let _value = self.globals.get(&value);
-                if let Some(_val) = _value 
-                { 
+                if let Some(_val) = _value { 
                     self.stack_push(_val.clone()); 
                 }
-                else
-                {
+                else {
                     println!("Runtime error: '{}' bhanne variable pahile banaiyeko chhaina. Kripaya variable use garnu bhanda agadi teslai banaunu hola.", value);
                     std::process::exit(18);
                 }
@@ -244,11 +229,9 @@ impl VirtMac
         } 
     }
 
-    fn _interpret_print_stmt(&mut self)
-    {
+    fn _interpret_print_stmt(&mut self) {
         let value: &PrimType = &self.stack_pop();
-        match value 
-        {
+        match value {
             PrimType::CString(len, value) => println!("{}", value),
             PrimType::Double(value) => println!("{}", value),
             PrimType::Integer(value) => println!("{}", value),
@@ -261,14 +244,12 @@ impl VirtMac
         }
     }
     
-    fn _interpret_binary_instr(&mut self, instr: OpCode)
-    {
+    fn _interpret_binary_instr(&mut self, instr: OpCode) {
         let aa: &PrimType = &self.stack_pop();
         let bb: &PrimType = &self.stack_pop();
         let mut ok: bool = true;
 
-        match instr 
-        {
+        match instr {
             OpCode::OP_AND | OpCode::OP_OR => {
                 let avalue = match aa {
                     PrimType::Integer(value) => *value,
@@ -286,7 +267,7 @@ impl VirtMac
                 };
 
                 match ok {
-                    true => { self._perform_logical_op(instr, avalue, bvalue); }
+                    true => self._perform_logical_op(instr, avalue, bvalue),
                     false => { 
                         println!(
                             "Unsupported types for '{}' operation for types: '{:?}' and '{:?}'", 
@@ -308,18 +289,14 @@ impl VirtMac
                 let mut bvalue_double: bool = false;
                 let mut avalue_f: f64 = 0.0;
                 let mut bvalue_f: f64 = 0.0;
-                
                 let mut avalue_i: i64 = 0;
                 let mut bvalue_i: i64 = 0;
-
                 match aa {
                     PrimType::Double(value) => {
                         avalue_double = true;
                         avalue_f = *value;
                     },
-                    PrimType::Integer(value) => {
-                        avalue_i = *value;
-                    },
+                    PrimType::Integer(value) => avalue_i = *value,
                     _ => {}
                 };
 
@@ -328,14 +305,11 @@ impl VirtMac
                         bvalue_double = true;
                         bvalue_f = *value;
                     },
-                    PrimType::Integer(value) => {
-                        bvalue_i = *value;
-                    },
+                    PrimType::Integer(value) => bvalue_i = *value,
                     _ => {}
                 };
 
-                match (avalue_double, bvalue_double)
-                {
+                match (avalue_double, bvalue_double) {
                     (true, true) => self._perform_arithmetic_op_double(instr, avalue_f, bvalue_f),
                     (true, false) => self._perform_arithmetic_op_double(instr, avalue_f, bvalue_i as f64),
                     (false, true) => self._perform_arithmetic_op_double(instr, avalue_i as f64, bvalue_f),
@@ -351,11 +325,9 @@ impl VirtMac
         }
     }
 
-    fn _perform_not_op(&mut self)
-    {
+    fn _perform_not_op(&mut self) {
         let value: &PrimType = &self.stack_pop();
-        match value 
-        {
+        match value {
             PrimType::Integer(value) => self.stack_push(PrimType::Boolean(*value == 0)),
             PrimType::Boolean(cond) => self.stack_push(PrimType::Boolean(!cond)),
             _ => {
@@ -365,11 +337,9 @@ impl VirtMac
         }
     }
 
-    fn _perform_negate_op(&mut self)
-    {
+    fn _perform_negate_op(&mut self) {
         let value: &PrimType = &self.stack_pop();
-        match value 
-        {
+        match value {
             PrimType::Integer(value) => self.stack_push(PrimType::Integer(-*value)),
             PrimType::Double(value) => self.stack_push(PrimType::Double(-*value)),
             _ => {
@@ -379,10 +349,8 @@ impl VirtMac
         }
     }
 
-    fn _perform_relational_op(&mut self, val1: &PrimType, val2: &PrimType, instr: OpCode)
-    {
-        let result: bool = match instr 
-        {
+    fn _perform_relational_op(&mut self, val1: &PrimType, val2: &PrimType, instr: OpCode) {
+        let result: bool = match instr {
             OpCode::OP_GT => self._relational_op_gt(val1, val2),
             OpCode::OP_LT => self._relational_op_lt(val1, val2),
             OpCode::OP_EQ_EQ => self._relational_op_eq_eq(val1, val2),
@@ -391,10 +359,8 @@ impl VirtMac
         self.stack_push(PrimType::Boolean(result));
     }
 
-    fn _relational_op_eq_eq(&mut self, val1: &PrimType, val2: &PrimType) -> bool
-    {
-        match (val1, val2)
-        {
+    fn _relational_op_eq_eq(&mut self, val1: &PrimType, val2: &PrimType) -> bool {
+        match (val1, val2) {
             (PrimType::Integer(a), PrimType::Integer(b)) => (a == b),
             (PrimType::Double(a), PrimType::Double(b)) => (a == b),
             (PrimType::Boolean(cond1), PrimType::Boolean(cond2)) => (cond1 == cond2),
@@ -406,10 +372,8 @@ impl VirtMac
         }
     }
 
-    fn _relational_op_gt(&mut self, val1: &PrimType, val2: &PrimType) -> bool
-    {
-        match (val1, val2)
-        {
+    fn _relational_op_gt(&mut self, val1: &PrimType, val2: &PrimType) -> bool {
+        match (val1, val2) {
             (PrimType::Integer(a), PrimType::Integer(b)) => (b > a),
             (PrimType::Double(a), PrimType::Double(b)) => (b > a),
             _ => {
@@ -419,10 +383,8 @@ impl VirtMac
         }
     }
 
-    fn _relational_op_lt(&mut self, val1: &PrimType, val2: &PrimType) -> bool
-    {
-        match (val1, val2)
-        {
+    fn _relational_op_lt(&mut self, val1: &PrimType, val2: &PrimType) -> bool {
+        match (val1, val2) {
             (PrimType::Integer(a), PrimType::Integer(b)) => (b < a),
             (PrimType::Double(a), PrimType::Double(b)) => (b < a),
             _ => {
@@ -432,58 +394,35 @@ impl VirtMac
         }
     }
 
-    fn _perform_logical_op(&mut self, instr: OpCode, avalue: i64, bvalue: i64)
-    {
-        match instr 
-        {
+    fn _perform_logical_op(&mut self, instr: OpCode, avalue: i64, bvalue: i64) {
+        match instr {
             OpCode::OP_AND => self.stack_push(PrimType::Integer(avalue & bvalue)),
             OpCode::OP_OR => self.stack_push(PrimType::Integer(avalue | bvalue)),
             _ => ()
         }
     }
 
-    fn _perform_arithmetic_op_double(&mut self, instr: OpCode, avalue: f64, bvalue: f64)
-    {
-        match instr
-        {
-            OpCode::OP_ADD => {
-                self.stack_push(PrimType::Double(avalue + bvalue));
-            },
-            OpCode::OP_SUBTRACT => {
-                self.stack_push(PrimType::Double(bvalue - avalue));
-            },
-            OpCode::OP_DIVIDE => {
-                self.stack_push(PrimType::Double(bvalue / avalue));
-            },
-            OpCode::OP_MULTIPLY => {
-                self.stack_push(PrimType::Double(bvalue * avalue));
-            }
+    fn _perform_arithmetic_op_double(&mut self, instr: OpCode, avalue: f64, bvalue: f64) {
+        match instr {
+            OpCode::OP_ADD => self.stack_push(PrimType::Double(avalue + bvalue)),
+            OpCode::OP_SUBTRACT => self.stack_push(PrimType::Double(bvalue - avalue)),
+            OpCode::OP_DIVIDE => self.stack_push(PrimType::Double(bvalue / avalue)),
+            OpCode::OP_MULTIPLY => self.stack_push(PrimType::Double(bvalue * avalue)),
             _ => ()
         }
     }
     
-    fn _perform_arithmetic_op_int(&mut self, instr: OpCode, avalue: i64, bvalue: i64)
-    {
-        match instr
-        {
-            OpCode::OP_ADD => {
-                self.stack_push(PrimType::Integer(avalue + bvalue));
-            },
-            OpCode::OP_SUBTRACT => {
-                self.stack_push(PrimType::Integer(bvalue - avalue));
-            },
-            OpCode::OP_DIVIDE => {
-                self.stack_push(PrimType::Integer((bvalue as f64 / avalue as f64) as i64));
-            },
-            OpCode::OP_MULTIPLY => {
-                self.stack_push(PrimType::Integer(bvalue * avalue));
-            }
+    fn _perform_arithmetic_op_int(&mut self, instr: OpCode, avalue: i64, bvalue: i64) {
+        match instr {
+            OpCode::OP_ADD => self.stack_push(PrimType::Integer(avalue + bvalue)),
+            OpCode::OP_SUBTRACT => self.stack_push(PrimType::Integer(bvalue - avalue)),
+            OpCode::OP_DIVIDE => self.stack_push(PrimType::Integer((bvalue as f64 / avalue as f64) as i64)),
+            OpCode::OP_MULTIPLY => self.stack_push(PrimType::Integer(bvalue * avalue)),
             _ => ()
         }
     }
 
-    fn panic_type_error(&self, op: &str, type1: &str, type2: &str)
-    {
+    fn panic_type_error(&self, op: &str, type1: &str, type2: &str) {
         println!("Type error: '{}' ra '{}' prakar ko value harulai '{}' operator lagauna mildaina.", type1, type2, op);
         std::process::exit(7);
     }
@@ -500,8 +439,7 @@ use std::{env, fs};
 
 fn main() {
     let _args: Vec<String> = env::args().collect();
-    if _args.len() < 2
-    {
+    if _args.len() < 2 {
         println!("Usage: cargo run <file_path>");
         std::process::exit(12);
     }
