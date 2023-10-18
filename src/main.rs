@@ -27,7 +27,9 @@
 pub mod scanner;
 pub mod compiler;
 pub mod chunk;
+pub mod interp;
 use chunk::{Chunk, PrimType, OpCode};
+use interp::ast::Expr;
 
 use std::collections::HashMap;
 
@@ -438,15 +440,31 @@ use std::fs::read_to_string;
 use std::{env, fs};
 
 fn main() {
-    let _args: Vec<String> = env::args().collect();
-    if _args.len() < 2 {
-        println!("Usage: cargo run <file_path>");
-        std::process::exit(12);
-    }
+    //let _args: Vec<String> = env::args().collect();
+    //if _args.len() < 2 {
+        //println!("Usage: cargo run <file_path>");
+        //std::process::exit(12);
+    //}
 
-    let file_path = &_args.get(1usize).clone();
-    let mut c: Chunk = Chunk::new();
-    let mut vm: VirtMac = VirtMac::new(c);
-    vm.interpret(file_path.unwrap());
+    //let file_path = &_args.get(1usize).clone();
+    //let mut c: Chunk = Chunk::new();
+    //let mut vm: VirtMac = VirtMac::new(c);
+    //vm.interpret(file_path.unwrap());
     // vm._dump_stack();
+
+    let mut lit = interp::ast::LiteralExpr {
+        value: interp::ast::LiteralType::CString(String::from("Ramesh Poudel"))
+    };
+
+    let mut ass = interp::ast::AssignExpr {
+        name: String::from("name"),
+        value: &mut lit as &mut dyn interp::ast::Expr
+    };
+
+    let mut int = interp::interpreter::Interpreter::init();
+    int.interpret(&mut [&mut ass]);
+
+    for val in &int.var_env {
+        print!("{:?} = {:?}", val.0, val.1);
+    }
 }
