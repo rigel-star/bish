@@ -1,8 +1,6 @@
 rakha x ma 4;
 rakha y ma 5;
-yadi (x barabar y) {
-    dekhau "thik";
-}
-natra {
-    dekhau "bethik";
-}
+dekhau x + y;
+dekhau x sano 9;
+dekhau x + galat;
+dekhau sahi + galat;
